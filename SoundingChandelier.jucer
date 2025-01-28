@@ -4,6 +4,10 @@
               useAppConfig="0" addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1">
   <MAINGROUP id="bAWerS" name="SoundingChandelier">
     <GROUP id="{B4154D11-AB1D-B452-AA72-D9D22E170E6C}" name="Source">
+      <FILE id="jvgE7i" name="osx_utils.h" compile="0" resource="0" file="Source/osx_utils.h"/>
+      <FILE id="Yu6U2n" name="osx_utils.mm" compile="1" resource="0" file="Source/osx_utils.mm"/>
+      <FILE id="v6mj7K" name="impdata.cc" compile="1" resource="0" file="Source/impdata.cc"/>
+      <FILE id="PKFaQz" name="impdata.h" compile="0" resource="0" file="Source/impdata.h"/>
       <FILE id="YA7U5d" name="spkarray.cc" compile="1" resource="0" file="Source/spkarray.cc"/>
       <FILE id="t1kbEN" name="spkarray.h" compile="0" resource="0" file="Source/spkarray.h"/>
       <FILE id="NV9wSn" name="global.h" compile="0" resource="0" file="Source/global.h"/>
@@ -65,11 +69,11 @@
         <MODULEPATH id="juce_osc" path="../../SDKs/JUCE/modules"/>
       </MODULEPATHS>
     </VS2022>
-    <XCODE_MAC targetFolder="Builds/MacOSX">
+    <XCODE_MAC targetFolder="Builds/MacOSX" externalLibraries="fftw3f&#10;sndfile">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" targetName="SoundingChandelier" headerPath="../Source&#10;../ThirdyParty/zita-convolver-4.0.5/source&#10;/opt/homebrew/include"
+        <CONFIGURATION isDebug="1" name="Debug" targetName="SoundingChandelier" headerPath="../../Source&#10;../../ThirdyParty/zita-convolver-4.0.3/source&#10;/opt/homebrew/include"
                        libraryPath="/opt/homebrew/lib"/>
-        <CONFIGURATION isDebug="0" name="Release" targetName="SoundingChandelier" headerPath="../Source&#10;../ThirdyParty/zita-convolver-4.0.5/source&#10;/opt/homebrew/include"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="SoundingChandelier" headerPath="../../Source&#10;../../ThirdyParty/zita-convolver-4.0.3/source&#10;/opt/homebrew/include"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_audio_basics" path="../../SDKs/JUCE/modules"/>
