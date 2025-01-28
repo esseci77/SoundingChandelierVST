@@ -18,6 +18,8 @@
       <FILE id="lQi3jj" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
       <FILE id="HiCB54" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+      <FILE id="jQLKOL" name="Scope.cpp" compile="1" resource="0" file="Source/Scope.cpp"/>
+      <FILE id="ZhvBcb" name="Scope.h" compile="0" resource="0" file="Source/Scope.h"/>
     </GROUP>
     <GROUP id="{789D93EE-7FF8-9889-177A-07B5E950B338}" name="ThirdyParty">
       <GROUP id="{5C312835-BDA6-F8F7-1BA7-AFC25F3BF485}" name="zita-convolver">

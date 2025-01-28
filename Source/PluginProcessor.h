@@ -70,10 +70,15 @@ public:
     /// OSC message callback
     void oscMessageReceived (const juce::OSCMessage& message) override;
 
-    /// Original plugin method.
+    /// Original plugin methods.
+    const OSC_state *oscstate (void) const { return _oscstate; }
+    
     void  getparams (void);
     int   load_inpfilt (const char *name);
     int   load_outfilt (const char *name);
+    int   upsample (unsigned int size, const float *input, float *outp1, float *outp2);
+    float sinc (float x);
+    float rcos (float x, float p);
 
     // Rendering engine state
     enum { NONE = -1, INIT = 0, IDLE = 1, PROC = 2 };
@@ -81,6 +86,7 @@ public:
 private:
     enum { MAXDEL = 8192, DLMASK = MAXDEL - 1, REFDEL = MAXDEL - 2048 };
     
+    int             _jprio;
     int             _state;
     int             _newst;
     int             _wrind;
