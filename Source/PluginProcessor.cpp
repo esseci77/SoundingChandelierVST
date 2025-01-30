@@ -26,33 +26,26 @@ static char config52 [64] =
 
 //==============================================================================
 SoundingChandelierAudioProcessor::SoundingChandelierAudioProcessor()
-#ifndef JucePlugin_PreferredChannelConfigurations
-  : AudioProcessor (BusesProperties()
-#if ! JucePlugin_IsMidiEffect
-#if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-#endif
-                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
-#endif
-                       ),
-#endif
+: juce::AudioProcessor(juce::AudioProcessor::BusesProperties()
+                       .withInput("LampaSources",  juce::AudioChannelSet::discreteChannels(NSRCE))
+                       .withOutput("LampaOutputs", juce::AudioChannelSet::discreteChannels(NSPKR))),
     //juce::OSCReceiver("LampaOscThread"),
     _state (INIT),
     _newst (NONE),
     _fsamp (0),
     _fsize (0),
-    _nsrce (8), //nsrce), this can be a plugin parameter
+    _nsrce (NSRCE), //nsrce), this can be a plugin parameter
     _oscqueue (64),
     _mgain (0)
 {
     _jprio = sched_get_priority_min(SCHED_OTHER);
-    
+
     // Disable output channels used for the AMB system.
     for (int i = 0; i < 64; i++)
     {
         _array.set_active (i, config52 [i]);
     }
-    
+
     char ifp [512];
     char ofp [512];
 
@@ -63,7 +56,7 @@ SoundingChandelierAudioProcessor::SoundingChandelierAudioProcessor()
     strncpy(ifp, SHARED"/lampadario/inputfilt1.ald",  511);
     strncpy(ofp, SHARED"/lampadario/outputfilt2.ald", 511);
 #endif
-    
+
     load_inpfilt (ifp);
     load_outfilt (ofp);
     // TODO: throw error if these methods go wrong.
@@ -157,7 +150,7 @@ void SoundingChandelierAudioProcessor::prepareToPlay (double sampleRate, int sam
     OUT_param *Q;
 
     S = _oscstate;
-    
+
     for (i = 0; i < NSRCE; i++)
     {
         S->_count = 0;
@@ -169,7 +162,7 @@ void SoundingChandelierAudioProcessor::prepareToPlay (double sampleRate, int sam
         S++;
     }
     Q = _outparam;
-    
+
     for (j = 0; j < NSPKR; j++)
     {
         for (i = 0; i < NSRCE; i++)
@@ -216,9 +209,19 @@ bool SoundingChandelierAudioProcessor::isBusesLayoutSupported (const BusesLayout
 }
 #endif
 
-void SoundingChandelierAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+void SoundingChandelierAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
+                                                     juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
+    
+    unsigned int   h, i, j, k;
+    float          t, tnew, dt, g, gnew, dg;
+    float          a0, a1, c, d, r, x, y, z, dx, dy, dz;
+    float          *p1, *p2, *q;
+    const Sgroup   *G;
+    OUT_param      *Q;
+    OSC_state      *S;
+
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
@@ -228,20 +231,187 @@ void SoundingChandelierAudioProcessor::processBlock (juce::AudioBuffer<float>& b
     // This is here to avoid people getting screaming feedback
     // when they first compile a plugin, but obviously you don't need to keep
     // this code if your algorithm always overwrites all the output channels.
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+    for (i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+    {
         buffer.clear (i, 0, buffer.getNumSamples());
-
+    }
     // This is the place where you'd normally do the guts of your plugin's
     // audio processing...
     // Make sure to reset the state if your inner loop is processing
     // the samples and the outer loop is handling the channels.
     // Alternatively, you can process the samples with the channels
     // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
 
-        // ..do something to the data...
+    if (_newst > NONE)
+    {
+        _state = _newst;
+        _newst = NONE;
+    }
+
+    if (_state < IDLE)
+    {
+        for (int i = 0; i < totalNumInputChannels; ++i)
+        {
+            buffer.clear (i, 0, buffer.getNumSamples());
+        }
+        return;
+    }
+    
+#if JACK_BASED_CLIENT
+    for (i = 0; i < _nsrce; i++)
+    {
+        _inpp [i] = (float *) jack_port_get_buffer (_jack_inpports [i], nframes);
+    }
+    
+    for (i = 0; i <  NSPKR; i++)
+    {
+        _outp [i] = _jack_outports [i] ? (float *) jack_port_get_buffer (_jack_outports [i], nframes)
+                                       : nullptr;
+    }
+#else
+    for (i = 0; i < _nsrce; ++i) //totalNumInputChannels
+    {
+        _inpp [i] = buffer.getReadPointer (i);
+    }
+
+    for (i = 0; i < NSPKR; ++i) // totalNumOutputChannels
+    {
+        _outp [i] = buffer.getWritePointer (i);
+    }
+
+    const size_t nframes = buffer.getNumSamples();
+#endif
+    
+    getparams ();
+
+    if (_state != PROC)
+    {
+        for (i = 0; i < NSPKR; i++)
+        {
+            if (_outp [i])
+            {
+                memset (_outp [i], 0, nframes * sizeof (float));
+            }
+        }
+        return;
+    }
+    
+    for (i = 0; i < _nsrce; i++)
+    {
+        memcpy (_inpconv.inpdata (i), _inpp [i], nframes * sizeof (float));
+    }
+    _inpconv.process ();
+
+    S = _oscstate;
+    
+    for (i = 0; i < _nsrce; i++)
+    {
+        p1 = _inpconv.outdata (2 * i);
+        p2 = _inpconv.outdata (2 * i + 1);
+        q  = S->_dline + _wrind;
+        
+        if (_wrind == 0)
+        {
+            S->_dline [MAXDEL] = *p1;
+        }
+        
+        for (k = 0; k < nframes; k++)
+        {
+            *q++ = *p1++;
+            *q++ = *p2++;
+        }
+        g = S->_g + _mgain;
+        S->_glin = 0.2f * ((g < -120.0) ? 0
+                                        : std::powf (10.0f, 0.05 * g));
+        S++;
+    }
+
+    r = 2.0f * _fsamp / 340.0f;
+    Q = _outparam;
+    
+    for (j = 0; j < NSPKR; j++)
+    {
+        G = _array.sgroup (j);
+        
+        if (! G->_active) continue;
+
+        q = _outconv.inpdata (j);
+    //	q = _outp [j];
+        x = G->_x;
+        y = G->_y;
+        z = G->_z;
+        memset (q, 0, nframes * sizeof (float));
+        S = _oscstate;
+        
+        for (i = 0; i < _nsrce; i++)
+        {
+            dx = x - S->_x;
+            dy = y - S->_y;
+            dz = z - S->_z;
+            d = sqrtf (dx * dx + dy * dy + dz * dz);
+            c = (dx * G->_x + dy * G->_y + dz * G->_z) / (d * G->_d);
+            
+            if (c < 0) c = 0;
+            {
+                tnew = (d - G->_d) * r + REFDEL;
+            }
+            gnew = c * S->_glin;
+
+            t = Q->_t [i];
+            g = Q->_g [i];
+            Q->_t [i] = tnew;
+            Q->_g [i] = gnew;
+            dt = (tnew - t) / nframes + 1e-30f;
+            dg = (gnew - g) / nframes + 1e-30f;
+
+            h = (int)(ceilf (t));
+            a1 = h - t;
+            a0 = 1.0f - a1;
+            h = _wrind - h;
+            p1 = S->_dline;
+            
+            for (k = 0; k < nframes; k++)
+            {
+                g += dg;
+                h += 2;
+                a0 += dt;
+                a1 -= dt;
+                
+                if (a0 < 0)
+                {
+                    a0 += 1.0f;
+                    a1 -= 1.0f;
+                    h++;
+                }
+                else if (a1 < 0)
+                {
+                    a0 -= 1.0f;
+                    a1 += 1.0f;
+                    h--;
+                }
+                h &= DLMASK;
+                q [k] += g * (a0 * p1 [h] + a1 * p1 [h + 1]);
+            }
+            S++;
+        }
+        Q++;
+    }
+
+    _outconv.process ();
+    
+    for (i = 0; i < NSPKR; i++)
+    {
+        if (_outp [i])
+        {
+            memcpy (_outp [i], _outconv.outdata (i), nframes * sizeof (float));
+        }
+    }
+    
+    _wrind += 2 * nframes;
+    
+    if (_wrind == MAXDEL)
+    {
+        _wrind = 0;
     }
 }
 
@@ -274,12 +444,12 @@ void SoundingChandelierAudioProcessor::oscMessageReceived (const juce::OSCMessag
 {
     OSC_param* P;
     auto addr = message.getAddressPattern();
-    
+
     if (addr.matches("/source/line"))
     {
         // format must be ",ifffff"
         const int32_t k = message[0].getInt32();
-        
+
         if ((k < 1) || (k > (int)_nsrce))
         {
             return;
@@ -336,6 +506,7 @@ void SoundingChandelierAudioProcessor::getparams ()
     {
         P = _oscqueue.rd_ptr ();
         k = P->_index;
+        
         if (k)
         {
             S = _oscstate + (k - 1);
@@ -356,6 +527,7 @@ void SoundingChandelierAudioProcessor::getparams ()
         _oscqueue.rd_commit ();
     }
     S = _oscstate;
+    
     for (i = 0; i < _nsrce; i++)
     {
         if (S->_count)
@@ -392,7 +564,7 @@ int SoundingChandelierAudioProcessor::load_inpfilt (const char *name)
         return 1;
     }
     D.open_read (name);
-    
+
     if (D.mode () != Impdata::MODE_READ)
     {
         fprintf (stderr, "Can't read '%s'.\n", name);
@@ -409,7 +581,7 @@ int SoundingChandelierAudioProcessor::load_inpfilt (const char *name)
         fprintf (stderr, "Input filter '%s' it too long.\n", name);
         return 3;
     }
-    
+
     size = 128;
     minp = 2048;
     maxp = 4096;
@@ -417,7 +589,7 @@ int SoundingChandelierAudioProcessor::load_inpfilt (const char *name)
     if (minp > size) minp = size;
     if (minp < _fsize) minp = _fsize;
     if (maxp < _fsize) maxp = _fsize;
-    
+
     if (_inpconv.configure (_nsrce, 2 * _nsrce, size, _fsize, minp, maxp, 0.0f))
     {
         fprintf (stderr, "Configuration of input convolution failed.\n");
@@ -463,7 +635,7 @@ int SoundingChandelierAudioProcessor::load_outfilt (const char *name)
         return 1;
     }
     D.open_read (name);
-    
+
     if (D.mode () != Impdata::MODE_READ)
     {
         fprintf (stderr, "Can't read '%s'.\n", name);
@@ -480,11 +652,11 @@ int SoundingChandelierAudioProcessor::load_outfilt (const char *name)
         fprintf (stderr, "Output filter '%s' it too long.\n", name);
         return 3;
     }
-    
+
     size = 128;
     minp = 1024;
     maxp = 4096;
-    
+
     while (size < D.n_fram ())
     {
         size *= 2;
@@ -495,14 +667,14 @@ int SoundingChandelierAudioProcessor::load_outfilt (const char *name)
 
     //_outconv.set_density (1.0f / 64);
     const float density = 1.0f / 64;
-    
+
     if (_outconv.configure (NSPKR, NSPKR, D.n_fram (), _fsize, minp, maxp, density))
     {
         fprintf (stderr, "Configuration of output convolution failed.\n");
         return 4;
     }
     D.alloc ();
-    
+
     for (i = 0; i < NSPKR; i++)
     {
         if (_array.sgroup (i)->_active)
@@ -511,7 +683,7 @@ int SoundingChandelierAudioProcessor::load_outfilt (const char *name)
             _outconv.impdata_create (i, i, 1, D.data (0), 0, size);
         }
     }
-    
+
     D.close ();
     D.deall ();
 
@@ -539,7 +711,7 @@ int SoundingChandelierAudioProcessor::upsample (unsigned int size, const float *
     // Compute interpolator in T domain, transform to
     // F-domain. Result in F0.
     memset (outp1, 0, size * sizeof (float));
-    
+
     for (i = -10; i < 10; i++)
     {
         outp1 [i & (size - 1)] = sinc (i + 0.5f) * rcos ((i + 0.5f) / 10, 0.8f);
@@ -551,7 +723,7 @@ int SoundingChandelierAudioProcessor::upsample (unsigned int size, const float *
     memset (outp1, 0, 10 * sizeof (float));
     memcpy (outp1 + 10, input, (size - 10) * sizeof (float));
     p = outp1 + size - 20;
-    
+
     for (i = 0; i < 20; i++)
     {
         p [i] *= rcos (i / 10.0f, 1.0f);
@@ -574,7 +746,7 @@ int SoundingChandelierAudioProcessor::upsample (unsigned int size, const float *
     // Transform back to T-domain.
     fftwf_execute_dft_c2r (PT, F1, outp1);
     fftwf_execute_dft_c2r (PT, F2, outp2);
-    
+
     for (j = 0; j < size; j++)
     {
         outp1 [j] /= size;

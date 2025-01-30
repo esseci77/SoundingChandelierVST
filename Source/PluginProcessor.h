@@ -99,8 +99,8 @@ private:
     OUT_param       _outparam [NSPKR];
     float           _ftime;
     float           _mgain;
-    float          *_inpp [NSRCE];
-    float          *_outp [NSPKR];
+    const float*    _inpp [NSRCE];
+    float*          _outp [NSPKR];
     Convproc        _inpconv;
     Convproc        _outconv;
     
