@@ -136,7 +136,60 @@ Scope::Scope(SoundingChandelierAudioProcessor* processor)
     startTimer((int)std::round(1000.0f * period));
 }
 
-void Scope::paint(juce::Graphics& g) 
+void Scope::resized()
+{
+    auto area = getLocalBounds();
+    
+    auto w0 = area.getWidth();
+    auto h0 = area.getHeight();
+    int side = 0; // plot side.
+    int leftClearance = 0;
+    int topClearance = 0;
+    
+    if (w0 > h0)
+    {
+        int dl = w0 - 2*h0;
+        
+        if (dl < 0)
+        {
+            side = h0 - dl/2;
+            topClearance = h0 - side/2;
+            area.removeFromTop(topClearance);
+            area.removeFromBottom(topClearance);
+        }
+        else
+        {
+            side = h0;
+            leftClearance = w0 - dl/2;
+            area.removeFromLeft(leftClearance);
+        }
+        m_topView->setBounds(area.removeFromLeft(side));
+        m_sideView->setBounds(area.removeFromLeft(side));
+
+    }
+    else
+    {
+        int dl = h0 - 2*w0;
+        
+        if (dl < 0)
+        {
+            side = w0 - dl/2;
+            leftClearance = w0 - side/2;
+            area.removeFromLeft(leftClearance);
+            area.removeFromRight(leftClearance);
+        }
+        else
+        {
+            side = w0;
+            topClearance = h0 - dl/2;
+            area.removeFromTop(topClearance);
+        }
+        m_topView->setBounds(area.removeFromTop(side));
+        m_sideView->setBounds(area.removeFromTop(side));
+    }
+}
+
+void Scope::paint(juce::Graphics& g)
 {
     g.fillAll(juce::Colours::black);
 }
@@ -152,7 +205,7 @@ void Scope::timerCallback()
     int i = 0;
     const OSC_state* S;
         
-    for (i = 0, S = m_processor->oscstate(); i < NSRCE; i++, S++)
+    for (i = 0, S = m_processor->oscCodec().oscstate(); i < NSRCE; i++, S++)
     {
         if (! (S->_flags))
         {

@@ -22,14 +22,17 @@
 #ifndef __GLOBAL_H
 #define __GLOBAL_H
 
+#include <cassert>
+
 #define  EV_X11         16
 #define  EV_UDPTX       0
 #define  EV_UDPRX       1
 #define  EV_EXIT        31
 
-#define  NSRCE          16
+#define  NSRCE          8 //16
 #define  NSPKR          64
 
+#define kDefaultUDPPort 15301
 
 class OSC_state
 {
@@ -72,14 +75,14 @@ public:
     _size (size),
     _mask (size - 1)	
     {
-	assert (! (_size & _mask));
+	    assert (! (_size & _mask));
        _data = new OSC_param [_size];
-	reset ();
+	   reset ();
     }
 
     ~OSC_queue (void)
     {
-	delete[] _data;
+	    delete[] _data;
     }
 
     void reset (void)

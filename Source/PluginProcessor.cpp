@@ -29,14 +29,14 @@ SoundingChandelierAudioProcessor::SoundingChandelierAudioProcessor()
 : juce::AudioProcessor(juce::AudioProcessor::BusesProperties()
                        .withInput("LampaSources",  juce::AudioChannelSet::discreteChannels(NSRCE))
                        .withOutput("LampaOutputs", juce::AudioChannelSet::discreteChannels(NSPKR))),
-    //juce::OSCReceiver("LampaOscThread"),
     _state (INIT),
     _newst (NONE),
     _fsamp (0),
     _fsize (0),
     _nsrce (NSRCE), //nsrce), this can be a plugin parameter
-    _oscqueue (64),
-    _mgain (0)
+    //_oscqueue (64),
+    _mgain (0),
+    _parameters(*this)
 {
     _jprio = sched_get_priority_min(SCHED_OTHER);
 
@@ -59,19 +59,9 @@ SoundingChandelierAudioProcessor::SoundingChandelierAudioProcessor()
 
     load_inpfilt (ifp);
     load_outfilt (ofp);
-    // TODO: throw error if these methods go wrong.
-/*
-    if (connect(kDefaultUDPPort))
-    {
-        juce::OSCReceiver::addListener(this, "/source/line");
-        juce::OSCReceiver::addListener(this, "/reset");
-        juce::OSCReceiver::addListener(this, "/gain");
-        juce::OSCReceiver::addListener(this, "/quit");
-    }
-    else
-    {
-        DBG("Cannot connect to UDP port.");
-    }*/
+    
+    _oscCodec = std::make_unique<OscCodec>(_nsrce);
+    jassert(_oscCodec);
 }
 
 SoundingChandelierAudioProcessor::~SoundingChandelierAudioProcessor()
@@ -145,11 +135,18 @@ void SoundingChandelierAudioProcessor::prepareToPlay (double sampleRate, int sam
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
+    _fsamp = (unsigned int)sampleRate;
+    _fsize = (unsigned int)samplesPerBlock;
+    //_ftime = (float)_fsize / (float)_fsamp;
+    _wrind = 0;
+
+    _oscCodec->setFtime(sampleRate, samplesPerBlock);
+    
     int i, j;
     OSC_state *S;
     OUT_param *Q;
 
-    S = _oscstate;
+    S = _oscCodec->oscstate();
 
     for (i = 0; i < NSRCE; i++)
     {
@@ -175,6 +172,10 @@ void SoundingChandelierAudioProcessor::prepareToPlay (double sampleRate, int sam
     _inpconv.set_options (Convproc::OPT_FFTW_MEASURE);
     _outconv.set_options (Convproc::OPT_FFTW_MEASURE);
     _state = IDLE;
+    
+    const int periodMs = (int)(1000.0 * _parameters.paramPeriod()
+                                        / sampleRate);
+    startTimer(periodMs);
 }
 
 void SoundingChandelierAudioProcessor::releaseResources()
@@ -282,7 +283,7 @@ void SoundingChandelierAudioProcessor::processBlock (juce::AudioBuffer<float>& b
     const size_t nframes = buffer.getNumSamples();
 #endif
     
-    getparams ();
+    _oscCodec->getparams ();
 
     if (_state != PROC)
     {
@@ -302,7 +303,7 @@ void SoundingChandelierAudioProcessor::processBlock (juce::AudioBuffer<float>& b
     }
     _inpconv.process ();
 
-    S = _oscstate;
+    S = _oscCodec->oscstate();
     
     for (i = 0; i < _nsrce; i++)
     {
@@ -341,7 +342,7 @@ void SoundingChandelierAudioProcessor::processBlock (juce::AudioBuffer<float>& b
         y = G->_y;
         z = G->_z;
         memset (q, 0, nframes * sizeof (float));
-        S = _oscstate;
+        S = _oscCodec->oscstate();
         
         for (i = 0; i < _nsrce; i++)
         {
@@ -440,53 +441,6 @@ void SoundingChandelierAudioProcessor::setStateInformation (const void* data, in
     // whose contents will have been created by the getStateInformation() call.
 }
 
-void SoundingChandelierAudioProcessor::oscMessageReceived (const juce::OSCMessage& message)
-{
-    OSC_param* P;
-    auto addr = message.getAddressPattern();
-
-    if (addr.matches("/source/line"))
-    {
-        // format must be ",ifffff"
-        const int32_t k = message[0].getInt32();
-
-        if ((k < 1) || (k > (int)_nsrce))
-        {
-            return;
-        }
-        P = _oscqueue.wr_ptr ();
-        P->_index = k;
-        P->_flags = 0;
-        P->_x = message[1].getFloat32();
-        P->_y = message[2].getFloat32();
-        P->_z = message[3].getFloat32();
-        P->_g = message[4].getFloat32();
-        P->_t = message[5].getFloat32();
-        _oscqueue.wr_commit ();
-    }
-    else if (addr.matches("/reset"))
-    {
-        while (_oscqueue.wr_avail () == 0)
-        {
-            juce::Thread::sleep(100);
-        }
-        P = _oscqueue.wr_ptr ();
-        P->_index = 0;
-        P->_flags = 0;
-        _oscqueue.wr_commit ();
-    }
-    else if (addr.matches("/gain"))
-    {
-        auto& arg = message[0];
-        _mgain = arg.getFloat32();
-    }
-    else if (addr.matches("/quit"))
-    {
-        // Do nothing because a plugin should not quit!
-        DBG("quit received");
-    }
-}
-
 //==============================================================================
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
@@ -494,62 +448,17 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
     return new SoundingChandelierAudioProcessor();
 }
 
-// --- Original lampa methods --------------------------------------------------
-
-void SoundingChandelierAudioProcessor::getparams ()
+void SoundingChandelierAudioProcessor::timerCallback()
 {
-    unsigned int  i, k, n;
-    OSC_param     *P;
-    OSC_state     *S;
-
-    while (_oscqueue.rd_avail())
-    {
-        P = _oscqueue.rd_ptr ();
-        k = P->_index;
-        
-        if (k)
-        {
-            S = _oscstate + (k - 1);
-            n = ceilf (P->_t / _ftime);
-            S->_dx = (P->_x - S->_x) / n;
-            S->_dy = (P->_y - S->_y) / n;
-            S->_dz = (P->_z - S->_z) / n;
-            S->_dg = (P->_g - S->_g) / n;
-            S->_count = n;
-        }
-        else
-        {
-            for (i = 0; i < NSRCE; i++)
-            {
-                _oscstate [i]._g = -200.0f;
-            }
-        }
-        _oscqueue.rd_commit ();
-    }
-    S = _oscstate;
+    // TODO: here plugin parameters data should be transferred to
+    // renderer structure, then a message can be sent to ui to trigger
+    // scope repaint.
     
-    for (i = 0; i < _nsrce; i++)
-    {
-        if (S->_count)
-        {
-            S->_x += S->_dx;
-            S->_y += S->_dy;
-            S->_z += S->_dz;
-            S->_g += S->_dg;
-            S->_count--;
-        }
-        if (S->_g < -150.0f)
-        {
-            S->_x = S->_y = S->_z = 0;
-            S->_flags = 0;
-        }
-        else
-        {
-            S->_flags = 1;
-        }
-        S++;
-    }
+    getChangeBroadcasterMessage().messageID = LampaChangeBroadcaster::Message::Type::kUpdateUI;
+    sendChangeMessage();
 }
+
+// --- Original lampa methods --------------------------------------------------
 
 int SoundingChandelierAudioProcessor::load_inpfilt (const char *name)
 {

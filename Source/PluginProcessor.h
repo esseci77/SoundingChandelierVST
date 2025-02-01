@@ -14,6 +14,32 @@
 #include "spkarray.h"
 #include "global.h"
 
+#include "OscCodec.h"
+#include "PluginParameters.h"
+
+class LampaChangeBroadcaster : public juce::ChangeBroadcaster
+{
+  public:
+    struct Message
+    {
+        enum Type
+        {
+            kNull,
+            kUpdateUI,
+            kLoadConfiguration
+        };
+        
+        Type messageID = kNull;
+        juce::String   contents;
+    };
+
+    Message& getChangeBroadcasterMessage() { return m_message; }
+    
+  private:
+    Message m_message;
+};
+// =============================================================================
+
 class OUT_param
 {
   public:
@@ -26,8 +52,8 @@ class OUT_param
 /**
 */
 class SoundingChandelierAudioProcessor  : public juce::AudioProcessor,
-                                          private juce::OSCReceiver,
-                                          private juce::OSCReceiver::ListenerWithOSCAddress<juce::OSCReceiver::MessageLoopCallback>
+                                          public juce::Timer,
+                                          public LampaChangeBroadcaster
 {
 public:
     //==============================================================================
@@ -66,19 +92,16 @@ public:
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
-
-    /// OSC message callback
-    void oscMessageReceived (const juce::OSCMessage& message) override;
-
-    /// Original plugin methods.
-    const OSC_state *oscstate (void) const { return _oscstate; }
     
-    void  getparams (void);
+    void timerCallback() override;
+    
+    OscCodec& oscCodec() { return *_oscCodec; }
+    
     int   load_inpfilt (const char *name);
     int   load_outfilt (const char *name);
     int   upsample (unsigned int size, const float *input, float *outp1, float *outp2);
-    float sinc (float x);
-    float rcos (float x, float p);
+    float sinc (float x) const;
+    float rcos (float x, float p) const;
 
     // Rendering engine state
     enum { NONE = -1, INIT = 0, IDLE = 1, PROC = 2 };
@@ -94,15 +117,18 @@ private:
     unsigned int    _fsize;
     unsigned int    _nsrce;
     SPK_array       _array;
-    OSC_queue       _oscqueue;
-    OSC_state       _oscstate [NSRCE];
+    //OSC_queue       _oscqueue;
+    //OSC_state       _oscstate [NSRCE];
     OUT_param       _outparam [NSPKR];
-    float           _ftime;
+    //float           _ftime;
     float           _mgain;
     const float*    _inpp [NSRCE];
     float*          _outp [NSPKR];
     Convproc        _inpconv;
     Convproc        _outconv;
+    
+    std::unique_ptr<OscCodec>    _oscCodec;
+    SoundingChandelierParameters _parameters;
     
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SoundingChandelierAudioProcessor)

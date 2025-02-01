@@ -11,6 +11,12 @@
       <FILE id="YA7U5d" name="spkarray.cc" compile="1" resource="0" file="Source/spkarray.cc"/>
       <FILE id="t1kbEN" name="spkarray.h" compile="0" resource="0" file="Source/spkarray.h"/>
       <FILE id="NV9wSn" name="global.h" compile="0" resource="0" file="Source/global.h"/>
+      <FILE id="ijxgNF" name="OscCodec.cpp" compile="1" resource="0" file="Source/OscCodec.cpp"/>
+      <FILE id="uUFTi5" name="OscCodec.h" compile="0" resource="0" file="Source/OscCodec.h"/>
+      <FILE id="l3Blzk" name="PluginParameters.cpp" compile="1" resource="0"
+            file="Source/PluginParameters.cpp"/>
+      <FILE id="pxFoFy" name="PluginParameters.h" compile="0" resource="0"
+            file="Source/PluginParameters.h"/>
       <FILE id="Phtqao" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="Jp38Gn" name="PluginProcessor.h" compile="0" resource="0"
@@ -20,6 +26,9 @@
       <FILE id="HiCB54" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
       <FILE id="jQLKOL" name="Scope.cpp" compile="1" resource="0" file="Source/Scope.cpp"/>
       <FILE id="ZhvBcb" name="Scope.h" compile="0" resource="0" file="Source/Scope.h"/>
+      <FILE id="dqyyfq" name="SourceControl.cpp" compile="1" resource="0"
+            file="Source/SourceControl.cpp"/>
+      <FILE id="nin6eZ" name="SourceControl.h" compile="0" resource="0" file="Source/SourceControl.h"/>
     </GROUP>
     <GROUP id="{789D93EE-7FF8-9889-177A-07B5E950B338}" name="ThirdyParty">
       <GROUP id="{5C312835-BDA6-F8F7-1BA7-AFC25F3BF485}" name="zita-convolver">
@@ -71,7 +80,8 @@
         <MODULEPATH id="juce_osc" path="../../SDKs/JUCE/modules"/>
       </MODULEPATHS>
     </VS2022>
-    <XCODE_MAC targetFolder="Builds/MacOSX" externalLibraries="fftw3f&#10;sndfile">
+    <XCODE_MAC targetFolder="Builds/MacOSX" externalLibraries="fftw3f&#10;sndfile"
+               customXcodeResourceFolders="Resources">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" targetName="SoundingChandelier" headerPath="../../Source&#10;../../ThirdyParty/zita-convolver-4.0.3/source&#10;/opt/homebrew/include"
                        libraryPath="/opt/homebrew/lib"/>
