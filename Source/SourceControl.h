@@ -9,3 +9,23 @@
 */
 
 #pragma once
+#include <JuceHeader.h>
+
+#include "PluginParameters.h"
+
+class ParameterPanel : public juce::Component,
+                       public juce::Value::Listener
+{
+  public:
+    ParameterPanel(SoundingChandelierParameters& params);
+    
+  private:
+    void resized() override;
+    void valueChanged(juce::Value& value) override;
+    
+    SoundingChandelierParameters&        m_params;
+    std::unique_ptr<juce::PropertyPanel> m_panel;
+    
+    juce::Array<juce::Identifier>        m_ids;
+    juce::Array<juce::Value>             m_values;
+};

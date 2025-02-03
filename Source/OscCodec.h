@@ -17,7 +17,7 @@ class OscCodec : public juce::OSCReceiver,
                  private juce::OSCReceiver::ListenerWithOSCAddress<juce::OSCReceiver::MessageLoopCallback>
 {
   public:
-    OscCodec(unsigned int nsrce);
+    OscCodec(unsigned int nsrce, const float ftime);
 
     /// Original plugin methods.
     const OSC_state* oscstate (void) const { return _oscstate; }

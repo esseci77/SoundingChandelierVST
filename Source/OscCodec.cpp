@@ -10,11 +10,13 @@
 
 #include "OscCodec.h"
 
+//TODO: OSC should write data to plugin parameters!!
 
-OscCodec::OscCodec(unsigned int nsrce)
+OscCodec::OscCodec(unsigned int nsrce, const float ftime)
  : juce::OSCReceiver("LampaOscThread"),
    _oscqueue (64),
-   _nsrce(nsrce)
+   _nsrce(nsrce),
+   _ftime(ftime)
 {
     if (connect(kDefaultUDPPort))
     {

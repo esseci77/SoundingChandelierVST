@@ -27,6 +27,7 @@ class SoundingChandelierParameters
     juce::AudioProcessorValueTreeState& valueTree() { return m_valueTreeState; }
 
     int numberOfSources() const { return m_nSources; }
+    
     SourceParameters& operator[](const int idx) { return m_srcParams[idx]; }
     
     bool thereAreSolos() const;
@@ -43,8 +44,10 @@ class SoundingChandelierParameters
     void setParamOffset(const float po) { m_paramOffset = (int)po; }
     int paramOffset() const { return m_paramOffset; }
 
-        
-   private:    
+    juce::Value getAsValue(const juce::Identifier &name,
+                           bool shouldUpdateSynchronously = true);
+    
+   private:
      juce::AudioProcessorValueTreeState m_valueTreeState;
     
     std::vector<SourceParameters> m_srcParams;

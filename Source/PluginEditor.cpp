@@ -11,19 +11,38 @@
 
 //==============================================================================
 SoundingChandelierAudioProcessorEditor::SoundingChandelierAudioProcessorEditor (SoundingChandelierAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p)
+    : juce::AudioProcessorEditor (&p), audioProcessor (p)
 {
     _scope = std::make_unique<Scope>(&audioProcessor);
     addAndMakeVisible(_scope.get());
     
-    juce::String text("UDP port: ");
+    _parameterPanel = std::make_unique<ParameterPanel>(p.parameters());
+    addAndMakeVisible(_parameterPanel.get());
+    
+    juce::String text("OSC port: ");
     text << kDefaultUDPPort;
     _portLabel = std::make_unique<juce::Label>("portLabel", text);
     addAndMakeVisible(_portLabel.get());
     
+    _toggleOsc = std::make_unique<juce::ToggleButton>("OSC connect");
+    
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
-    setSize (600, 400);
+    setSize (600, 600);
+    
+    _toggleOsc->onClick = [this]()
+    {
+        auto& scp = dynamic_cast<SoundingChandelierAudioProcessor&>(audioProcessor);
+        
+        if (_toggleOsc->getToggleState())
+        {
+            scp.startOSC();
+        }
+        else
+        {
+            scp.stopOSC();
+        }
+    };
 }
 
 SoundingChandelierAudioProcessorEditor::~SoundingChandelierAudioProcessorEditor()
@@ -46,9 +65,13 @@ void SoundingChandelierAudioProcessorEditor::resized()
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
     auto area = getLocalBounds();
-    auto strip = area.removeFromBottom(30);
-    _portLabel->setBounds(strip.removeFromLeft(120));
-    _scope->setBounds(area);
+    auto strip = area.removeFromBottom(40);
+    
+    _toggleOsc->setBounds(strip.removeFromLeft(120));
+    _portLabel->setBounds(strip.removeFromRight(120));
+    
+    _scope->setBounds(area.removeFromLeft(area.getWidth()/2));
+    _parameterPanel->setBounds(area);
 }
 
 void SoundingChandelierAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster* cb)

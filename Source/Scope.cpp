@@ -16,7 +16,8 @@ Scope::View::View(const juce::String& name,
                   const int nsources,
                   const float widthInMeters,
                   const float heightInMeters)
-: juce::Component(m_name),
+: juce::Component(name),
+  m_name(name),
   m_positions(nsources, { 0.0f, 0.0f }),
   m_width(widthInMeters),
   m_height(heightInMeters)
@@ -52,7 +53,7 @@ void Scope::View::paint(juce::Graphics& g)
     g.setFont(11.0f);
     g.setColour(juce::Colours::white);
     
-    g.drawText(m_name, area.removeFromTop(12.0f),
+    g.drawText(m_name, area.removeFromTop(12),
                juce::Justification(juce::Justification::Flags::topLeft));
     
     // draw grid with tick every 0.5 m
@@ -75,7 +76,7 @@ void Scope::View::paint(juce::Graphics& g)
         const float txn = w_2 - x * Rx;
         
         g.drawLine(txp, ty0, txp, ty1);
-        g.drawLine(txn, ty0, txp, ty1);
+        g.drawLine(txn, ty0, txn, ty1);
     }
     
     for ( ; y < 0.5f * m_height; y += 0.5f)
@@ -126,10 +127,10 @@ Scope::Scope(SoundingChandelierAudioProcessor* processor)
  : juce::Component("SoundSourcesScope"),
    m_processor(processor)
 {
-    m_topView = std::make_unique<View>("Top", NSRCE, 2.0f, 2.0f);
+    m_topView = std::make_unique<View>("Top", NSRCE, 4.0f, 4.0f);
     addAndMakeVisible(m_topView.get());
     
-    m_sideView = std::make_unique<View>("Side", NSRCE, 2.0f, 2.0f);
+    m_sideView = std::make_unique<View>("Side", NSRCE, 4.0f, 4.0f);
     addAndMakeVisible(m_sideView.get());
 
     const float period = 1.0f / m_framerate;
@@ -152,15 +153,15 @@ void Scope::resized()
         
         if (dl < 0)
         {
-            side = h0 - dl/2;
-            topClearance = h0 - side/2;
+            side = h0 + dl/2;
+            topClearance = (h0 - side)/2;
             area.removeFromTop(topClearance);
             area.removeFromBottom(topClearance);
         }
         else
         {
             side = h0;
-            leftClearance = w0 - dl/2;
+            leftClearance = (w0 - dl)/2;
             area.removeFromLeft(leftClearance);
         }
         m_topView->setBounds(area.removeFromLeft(side));
@@ -173,15 +174,15 @@ void Scope::resized()
         
         if (dl < 0)
         {
-            side = w0 - dl/2;
-            leftClearance = w0 - side/2;
+            side = w0 + dl/2;
+            leftClearance = (w0 - side)/2;
             area.removeFromLeft(leftClearance);
             area.removeFromRight(leftClearance);
         }
         else
         {
             side = w0;
-            topClearance = h0 - dl/2;
+            topClearance = (h0 - dl)/2;
             area.removeFromTop(topClearance);
         }
         m_topView->setBounds(area.removeFromTop(side));
@@ -205,7 +206,7 @@ void Scope::timerCallback()
     int i = 0;
     const OSC_state* S;
         
-    for (i = 0, S = m_processor->oscCodec().oscstate(); i < NSRCE; i++, S++)
+    for (i = 0, S = m_processor->oscstate(); i < NSRCE; i++, S++)
     {
         if (! (S->_flags))
         {

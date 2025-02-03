@@ -46,12 +46,22 @@ static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout
                                                                        0.0f,
                                                                      100.0f,
                                                                       50.0f));
+        paramId = "Gain";
+        label   = "Gain";
+        paramId << i;
+        label   << i + 1;
+        params.push_back(std::make_unique<juce::AudioParameterFloat>(paramId,     // 3
+                                                                     label,
+                                                                       0.0f,
+                                                                     100.0f,
+                                                                      50.0f));
+
     }
     return { params.begin(), params.end() };
 }
 
 SoundingChandelierParameters::SoundingChandelierParameters(juce::AudioProcessor& p)
-  : m_valueTreeState(p, nullptr, "PARAMETERS", createParameterLayout(&p))
+  : m_valueTreeState(p, nullptr, "LampaParameters", createParameterLayout(&p))
 {
     m_nSources = NSRCE; //p.getTotalNumInputChannels();
     m_srcParams.resize(m_nSources);
@@ -67,5 +77,16 @@ SoundingChandelierParameters::SoundingChandelierParameters(juce::AudioProcessor&
         paramId = "ZPos";
         paramId << i;
         m_srcParams[i].zpos  = (juce::AudioParameterFloat*)m_valueTreeState.getParameter(paramId);
+        paramId = "Gain";
+        paramId << i;
+        m_srcParams[i].zpos  = (juce::AudioParameterFloat*)m_valueTreeState.getParameter(paramId);
     }
+}
+
+
+juce::Value SoundingChandelierParameters::getAsValue(const juce::Identifier &name,
+                                                     bool shouldUpdateSynchronously)
+{
+    return m_valueTreeState.state.getPropertyAsValue(name, nullptr,
+                                                     shouldUpdateSynchronously);
 }

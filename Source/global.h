@@ -33,6 +33,18 @@
 #define  NSPKR          64
 
 #define kDefaultUDPPort 15301
+#define kXdefault           0.0
+#define kXmin              -2.0
+#define kXmax               2.0
+#define kYdefault           0.0
+#define kYmin              -2.0
+#define kYmax               2.0
+#define kZdefault           0.0
+#define kZmin              -2.0
+#define kZmax               2.0
+#define kGainDefault        0.0
+#define kGainMin         -120.0
+#define kGainMax            0.0
 
 class OSC_state
 {

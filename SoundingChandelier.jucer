@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="yd8KLX" name="SoundingChandelier" projectType="audioplug"
-              useAppConfig="0" addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1">
+              useAppConfig="0" addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1"
+              bundleIdentifier="it.cds.Lampa" aaxIdentifier="it.cds.Lampa"
+              pluginAUExportPrefix="LampaAU" pluginManufacturer="cds" pluginName="Lampa"
+              pluginDesc="CdS Sounding Chandelier Renderer" pluginManufacturerCode="Cdsu">
   <MAINGROUP id="bAWerS" name="SoundingChandelier">
     <GROUP id="{B4154D11-AB1D-B452-AA72-D9D22E170E6C}" name="Source">
       <FILE id="jvgE7i" name="osx_utils.h" compile="0" resource="0" file="Source/osx_utils.h"/>

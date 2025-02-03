@@ -59,9 +59,6 @@ SoundingChandelierAudioProcessor::SoundingChandelierAudioProcessor()
 
     load_inpfilt (ifp);
     load_outfilt (ofp);
-    
-    _oscCodec = std::make_unique<OscCodec>(_nsrce);
-    jassert(_oscCodec);
 }
 
 SoundingChandelierAudioProcessor::~SoundingChandelierAudioProcessor()
@@ -137,23 +134,23 @@ void SoundingChandelierAudioProcessor::prepareToPlay (double sampleRate, int sam
     // initialisation that you need..
     _fsamp = (unsigned int)sampleRate;
     _fsize = (unsigned int)samplesPerBlock;
-    //_ftime = (float)_fsize / (float)_fsamp;
+    _ftime = (float)_fsize / (float)_fsamp;
     _wrind = 0;
 
-    _oscCodec->setFtime(sampleRate, samplesPerBlock);
+    //_oscCodec->setFtime(sampleRate, samplesPerBlock);
     
     int i, j;
     OSC_state *S;
     OUT_param *Q;
 
-    S = _oscCodec->oscstate();
+    S = _oscstate;
 
     for (i = 0; i < NSRCE; i++)
     {
         S->_count = 0;
         S->_flags = 0;
         S->_x = S->_y = S->_z = 0.0f;
-            S->_g = -200.0f;
+        S->_g = -200.0f;
         S->_dline = new float [MAXDEL + 1];
         memset (S->_dline, 0, (MAXDEL + 1) * sizeof (float));
         S++;
@@ -283,7 +280,7 @@ void SoundingChandelierAudioProcessor::processBlock (juce::AudioBuffer<float>& b
     const size_t nframes = buffer.getNumSamples();
 #endif
     
-    _oscCodec->getparams ();
+    //_oscCodec->getparams ();  TODO: get values from parameters!
 
     if (_state != PROC)
     {
@@ -303,7 +300,7 @@ void SoundingChandelierAudioProcessor::processBlock (juce::AudioBuffer<float>& b
     }
     _inpconv.process ();
 
-    S = _oscCodec->oscstate();
+    S = _oscstate;
     
     for (i = 0; i < _nsrce; i++)
     {
@@ -342,7 +339,7 @@ void SoundingChandelierAudioProcessor::processBlock (juce::AudioBuffer<float>& b
         y = G->_y;
         z = G->_z;
         memset (q, 0, nframes * sizeof (float));
-        S = _oscCodec->oscstate();
+        S = _oscstate;
         
         for (i = 0; i < _nsrce; i++)
         {
@@ -456,6 +453,20 @@ void SoundingChandelierAudioProcessor::timerCallback()
     
     getChangeBroadcasterMessage().messageID = LampaChangeBroadcaster::Message::Type::kUpdateUI;
     sendChangeMessage();
+}
+
+void SoundingChandelierAudioProcessor::startOSC()
+{
+    if (!_oscCodec)
+    {
+        _oscCodec = std::make_unique<OscCodec>(_nsrce, _ftime);
+        jassert(_oscCodec);
+    }
+}
+
+void SoundingChandelierAudioProcessor::stopOSC()
+{
+    _oscCodec = nullptr;
 }
 
 // --- Original lampa methods --------------------------------------------------

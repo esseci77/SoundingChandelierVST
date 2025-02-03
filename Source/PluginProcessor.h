@@ -95,8 +95,12 @@ public:
     
     void timerCallback() override;
     
-    OscCodec& oscCodec() { return *_oscCodec; }
+    void startOSC();
+    void stopOSC();
+    //OscCodec& oscCodec() { return *_oscCodec; }
+    SoundingChandelierParameters& parameters() { return _parameters; }
     
+    OSC_state* oscstate (void) { return _oscstate; }
     int   load_inpfilt (const char *name);
     int   load_outfilt (const char *name);
     int   upsample (unsigned int size, const float *input, float *outp1, float *outp2);
@@ -118,9 +122,9 @@ private:
     unsigned int    _nsrce;
     SPK_array       _array;
     //OSC_queue       _oscqueue;
-    //OSC_state       _oscstate [NSRCE];
+    OSC_state       _oscstate [NSRCE];
     OUT_param       _outparam [NSPKR];
-    //float           _ftime;
+    float           _ftime;
     float           _mgain;
     const float*    _inpp [NSRCE];
     float*          _outp [NSPKR];

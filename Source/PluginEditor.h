@@ -11,6 +11,7 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 #include "Scope.h"
+#include "SourceControl.h"
 
 //==============================================================================
 /**
@@ -26,15 +27,17 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
-    void changeListenerCallback(juce::ChangeBroadcaster* cb);
+    void changeListenerCallback(juce::ChangeBroadcaster* cb) override;
     
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     SoundingChandelierAudioProcessor& audioProcessor;
     
-    std::unique_ptr<Scope>       _scope;
-    std::unique_ptr<juce::Label> _portLabel;
+    std::unique_ptr<Scope>              _scope;
+    std::unique_ptr<ParameterPanel>     _parameterPanel;
+    std::unique_ptr<juce::Label>        _portLabel;
+    std::unique_ptr<juce::ToggleButton> _toggleOsc;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SoundingChandelierAudioProcessorEditor)
 };

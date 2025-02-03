@@ -43,8 +43,8 @@ class Scope : public juce::Component,
         std::vector<juce::Point<float>> m_positions;
         std::vector<juce::Colour>       m_palette;
         
-        float m_width      =  2.0; // meters
-        float m_height     =  2.0; // meters
+        float m_width      =  4.0; // meters
+        float m_height     =  4.0; // meters
         float m_sourceSize = 10.0f; // pixel
         
         juce::CriticalSection m_criticalSection;
