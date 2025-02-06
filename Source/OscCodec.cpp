@@ -36,7 +36,7 @@ void OscCodec::setFtime(const double sampleRate, int const samplesPerBlock)
     _ftime = (float)samplesPerBlock/(float)sampleRate;
 }
 
-void OscCodec::getparams ()
+void OscCodec::getparams (OSC_state* processorState)
 {
     unsigned int  i, k, n;
     OSC_param     *P;
@@ -49,7 +49,8 @@ void OscCodec::getparams ()
         
         if (k)
         {
-            S = _oscstate + (k - 1);
+            //S = _oscstate + (k - 1);
+            S = processorState + (k - 1);
             n = ceilf (P->_t / _ftime);
             S->_dx = (P->_x - S->_x) / n;
             S->_dy = (P->_y - S->_y) / n;
@@ -61,12 +62,13 @@ void OscCodec::getparams ()
         {
             for (i = 0; i < NSRCE; i++)
             {
-                _oscstate [i]._g = -200.0f;
+                //_oscstate [i]._g = -200.0f;
+                processorState [i]._g = -200.0f;
             }
         }
         _oscqueue.rd_commit ();
     }
-    S = _oscstate;
+    S = processorState; //_oscstate;
     
     for (i = 0; i < _nsrce; i++)
     {

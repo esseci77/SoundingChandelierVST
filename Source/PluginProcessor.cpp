@@ -27,8 +27,8 @@ static char config52 [64] =
 //==============================================================================
 SoundingChandelierAudioProcessor::SoundingChandelierAudioProcessor()
 : juce::AudioProcessor(juce::AudioProcessor::BusesProperties()
-                       .withInput("LampaSources",  juce::AudioChannelSet::discreteChannels(NSRCE))
-                       .withOutput("LampaOutputs", juce::AudioChannelSet::discreteChannels(NSPKR))),
+                       .withInput("LampaSources",  juce::AudioChannelSet::ambisonic(7))//discreteChannels(NSRCE))
+                       .withOutput("LampaOutputs", juce::AudioChannelSet::ambisonic(7))),//discreteChannels(NSPKR))),
     _state (INIT),
     _newst (NONE),
     _fsamp (0),
@@ -136,9 +136,12 @@ void SoundingChandelierAudioProcessor::prepareToPlay (double sampleRate, int sam
     _fsize = (unsigned int)samplesPerBlock;
     _ftime = (float)_fsize / (float)_fsamp;
     _wrind = 0;
-
+#if DEBUG
     //_oscCodec->setFtime(sampleRate, samplesPerBlock);
-    
+    const auto ich  = getTotalNumInputChannels();
+    const auto och = getTotalNumOutputChannels();
+    DBG("Actually " + juce::String(ich) + " inputs, " + juce::String(och) + " outputs.");
+#endif
     int i, j;
     OSC_state *S;
     OUT_param *Q;
@@ -169,7 +172,7 @@ void SoundingChandelierAudioProcessor::prepareToPlay (double sampleRate, int sam
     _inpconv.set_options (Convproc::OPT_FFTW_MEASURE);
     _outconv.set_options (Convproc::OPT_FFTW_MEASURE);
     _state = IDLE;
-    
+        
     const int periodMs = (int)(1000.0 * _parameters.paramPeriod()
                                         / sampleRate);
     startTimer(periodMs);
@@ -181,6 +184,7 @@ void SoundingChandelierAudioProcessor::releaseResources()
     // spare memory, etc.
 }
 
+/*
 #ifndef JucePlugin_PreferredChannelConfigurations
 bool SoundingChandelierAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
@@ -205,7 +209,7 @@ bool SoundingChandelierAudioProcessor::isBusesLayoutSupported (const BusesLayout
     return true;
   #endif
 }
-#endif
+#endif*/
 
 void SoundingChandelierAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                                                      juce::MidiBuffer& midiMessages)
@@ -280,8 +284,15 @@ void SoundingChandelierAudioProcessor::processBlock (juce::AudioBuffer<float>& b
     const size_t nframes = buffer.getNumSamples();
 #endif
     
-    //_oscCodec->getparams ();  TODO: get values from parameters!
-
+    if (_oscCodec)
+    {
+        _oscCodec->getparams (_oscstate);
+    }
+    else
+    {
+        _parameters.copyTo(_oscstate);
+    }
+    
     if (_state != PROC)
     {
         for (i = 0; i < NSPKR; i++)
@@ -447,12 +458,13 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 
 void SoundingChandelierAudioProcessor::timerCallback()
 {
-    // TODO: here plugin parameters data should be transferred to
-    // renderer structure, then a message can be sent to ui to trigger
-    // scope repaint.
+    if (_oscCodec)
+    {
+        _parameters.copyFrom(_oscstate);
+    }
     
-    getChangeBroadcasterMessage().messageID = LampaChangeBroadcaster::Message::Type::kUpdateUI;
-    sendChangeMessage();
+    //getChangeBroadcasterMessage().messageID = LampaChangeBroadcaster::Message::Type::kUpdateUI;
+    //sendChangeMessage();
 }
 
 void SoundingChandelierAudioProcessor::startOSC()

@@ -64,9 +64,9 @@ public:
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
 
-   #ifndef JucePlugin_PreferredChannelConfigurations
-    bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
-   #endif
+   //#ifndef JucePlugin_PreferredChannelConfigurations
+    //bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
+   //#endif
 
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
@@ -95,9 +95,9 @@ public:
     
     void timerCallback() override;
     
+    /// move parameters value to current state.
     void startOSC();
     void stopOSC();
-    //OscCodec& oscCodec() { return *_oscCodec; }
     SoundingChandelierParameters& parameters() { return _parameters; }
     
     OSC_state* oscstate (void) { return _oscstate; }

@@ -20,9 +20,8 @@ class OscCodec : public juce::OSCReceiver,
     OscCodec(unsigned int nsrce, const float ftime);
 
     /// Original plugin methods.
-    const OSC_state* oscstate (void) const { return _oscstate; }
-    OSC_state* oscstate (void) { return _oscstate; }
-    void  getparams (void);
+    //OSC_state* oscstate (void) { return _oscstate; }
+    void  getparams (OSC_state* processorState);
     
     void setFtime(const double sampleRate, int const samplesPerBlock);
     
@@ -30,7 +29,7 @@ class OscCodec : public juce::OSCReceiver,
     void oscMessageReceived (const juce::OSCMessage& message) override;
     
     OSC_queue  _oscqueue;
-    OSC_state  _oscstate [NSRCE];
+    //OSC_state  _oscstate [NSRCE]; // moved to processor
     
     unsigned int    _nsrce;
     float           _ftime;

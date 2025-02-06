@@ -208,13 +208,13 @@ void Scope::timerCallback()
         
     for (i = 0, S = m_processor->oscstate(); i < NSRCE; i++, S++)
     {
-        if (! (S->_flags))
+        /*if (! (S->_flags))
         {
             continue;
         }
         //x = 100 + (int)((40 * S->_x + 0.5f));
         //y = 100 - (int)((40 * S->_y + 0.5f));
-        //z = 100 - (int)((40 * S->_z + 0.5f));
+        //z = 100 - (int)((40 * S->_z + 0.5f));*/
         topPositions[i].x = S->_x;
         topPositions[i].y = S->_y;
         

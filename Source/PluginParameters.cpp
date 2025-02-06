@@ -25,36 +25,36 @@ static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout
         label   << i + 1;
         params.push_back(std::make_unique<juce::AudioParameterFloat>(paramId,     // 0
                                                                      label,
-                                                                       0.0f,
-                                                                     100.0f,
-                                                                      50.0f));
+                                                                     kXmin,
+                                                                     kXmax,
+                                                                     kXdefault));
         paramId = "YPos";
         label   = "Y position";
         paramId << i;
         label   << i + 1;
         params.push_back(std::make_unique<juce::AudioParameterFloat>(paramId,     // 1
                                                                      label,
-                                                                       0.0f,
-                                                                     100.0f,
-                                                                      50.0f));
+                                                                     kYmin,
+                                                                     kYmax,
+                                                                     kYdefault));
         paramId = "ZPos";
         label   = "Z position";
         paramId << i;
         label   << i + 1;
         params.push_back(std::make_unique<juce::AudioParameterFloat>(paramId,     // 2
                                                                      label,
-                                                                       0.0f,
-                                                                     100.0f,
-                                                                      50.0f));
+                                                                     kZmin,
+                                                                     kZmax,
+                                                                     kZdefault));
         paramId = "Gain";
         label   = "Gain";
         paramId << i;
         label   << i + 1;
         params.push_back(std::make_unique<juce::AudioParameterFloat>(paramId,     // 3
                                                                      label,
-                                                                       0.0f,
-                                                                     100.0f,
-                                                                      50.0f));
+                                                                     kGainMin,
+                                                                     kGainMax,
+                                                                     kGainDefault));
 
     }
     return { params.begin(), params.end() };
@@ -79,7 +79,7 @@ SoundingChandelierParameters::SoundingChandelierParameters(juce::AudioProcessor&
         m_srcParams[i].zpos  = (juce::AudioParameterFloat*)m_valueTreeState.getParameter(paramId);
         paramId = "Gain";
         paramId << i;
-        m_srcParams[i].zpos  = (juce::AudioParameterFloat*)m_valueTreeState.getParameter(paramId);
+        m_srcParams[i].gain  = (juce::AudioParameterFloat*)m_valueTreeState.getParameter(paramId);
     }
 }
 
@@ -89,4 +89,30 @@ juce::Value SoundingChandelierParameters::getAsValue(const juce::Identifier &nam
 {
     return m_valueTreeState.state.getPropertyAsValue(name, nullptr,
                                                      shouldUpdateSynchronously);
+}
+
+void SoundingChandelierParameters::copyTo(OSC_state* stateArray) const
+{
+    for (int i = 0; i < m_nSources; ++i)
+    {
+        stateArray[i]._x = m_srcParams[i].xpos->get();
+        stateArray[i]._y = m_srcParams[i].ypos->get();
+        stateArray[i]._z = m_srcParams[i].zpos->get();
+        stateArray[i]._g = m_srcParams[i].gain->get();
+        stateArray[i]._dx = 0.0f;
+        stateArray[i]._dy = 0.0f;
+        stateArray[i]._dz = 0.0f;
+        stateArray[i]._dg = 0.0f;
+    }
+}
+
+void SoundingChandelierParameters::copyFrom(const OSC_state* stateArray)
+{
+    for (int i = 0; i < m_nSources; ++i)
+    {
+        *(m_srcParams[i].xpos) = stateArray[i]._x;
+        *(m_srcParams[i].ypos) = stateArray[i]._y;
+        *(m_srcParams[i].zpos) = stateArray[i]._z;
+        *(m_srcParams[i].gain) = stateArray[i]._g;
+    }
 }

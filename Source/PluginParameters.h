@@ -10,12 +10,14 @@
 
 #pragma once
 #include <JuceHeader.h>
+#include "global.h"
 
 struct SourceParameters
 {
     juce::AudioParameterFloat*   xpos  = nullptr; // x position
     juce::AudioParameterFloat*   ypos  = nullptr; // y position
     juce::AudioParameterFloat*   zpos  = nullptr; // z position
+    juce::AudioParameterFloat*   gain  = nullptr; // gain
 };
 
 class SoundingChandelierParameters
@@ -32,6 +34,12 @@ class SoundingChandelierParameters
     
     bool thereAreSolos() const;
     
+    /// Copy parameter value to state array.
+    void copyTo(OSC_state* stateArray) const;
+
+    /// Copy value from state array to parameter.
+    void copyFrom(const OSC_state* stateArray);
+
     /**
      * @brief Update parameters
      * @param dt Time interval in seconds
