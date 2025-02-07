@@ -98,7 +98,9 @@ public:
     /// move parameters value to current state.
     void startOSC();
     void stopOSC();
+    void resetSourceParameters();
     SoundingChandelierParameters& parameters() { return _parameters; }
+    
     
     OSC_state* oscstate (void) { return _oscstate; }
     int   load_inpfilt (const char *name);
@@ -111,7 +113,6 @@ public:
     enum { NONE = -1, INIT = 0, IDLE = 1, PROC = 2 };
     
 private:
-    enum { MAXDEL = 8192, DLMASK = MAXDEL - 1, REFDEL = MAXDEL - 2048 };
     
     int             _jprio;
     int             _state;

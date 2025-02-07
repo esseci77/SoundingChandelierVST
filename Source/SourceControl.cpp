@@ -32,6 +32,11 @@ void ParameterPanel::FloatControl::resized()
     m_slider->setBounds(area);
 }
 
+void ParameterPanel::FloatControl::enable(const bool onOff)
+{
+    m_slider->setEnabled(onOff);
+}
+
 ParameterPanel::SourcePanel::SourcePanel(const int sourceIndex,
                                          SourceParameters& parameters)
 {
@@ -65,6 +70,14 @@ void ParameterPanel::SourcePanel::resized()
     m_gainCtl->setBounds(area.removeFromTop(h));
 }
 
+void ParameterPanel::SourcePanel::enable(const bool onOff)
+{
+    m_xCtl->enable(onOff);
+    m_yCtl->enable(onOff);
+    m_zCtl->enable(onOff);
+    m_gainCtl->enable(onOff);
+}
+
 ParameterPanel::SourcesPanel::SourcesPanel(SoundingChandelierParameters& params)
 {
     for (int i = 0; i < params.numberOfSources(); ++i)
@@ -88,6 +101,16 @@ void ParameterPanel::SourcesPanel::resized()
     }
 }
 
+void ParameterPanel::SourcesPanel::enable(const bool onOff)
+{
+    const auto nSect = m_panels.size();
+    
+    for (auto i = 0; i < nSect; ++i)
+    {
+        m_panels[i]->enable(onOff);
+    }
+}
+
 ParameterPanel::ParameterPanel(SoundingChandelierParameters& params)
 {
     m_viewport = std::make_unique<juce::Viewport>();
@@ -101,3 +124,10 @@ void ParameterPanel::resized()
     auto area =  getLocalBounds();
     m_viewport->setBounds(area);
 }
+
+void ParameterPanel::enable(const bool onOff)
+{
+    auto* sp = dynamic_cast<SourcePanel*>(m_viewport->getViewedComponent());
+    sp->enable(onOff);
+}
+

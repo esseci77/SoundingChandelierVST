@@ -9,6 +9,7 @@
 */
 
 #include "OscCodec.h"
+#include "global.h"
 
 //TODO: OSC should write data to plugin parameters!!
 
@@ -18,6 +19,8 @@ OscCodec::OscCodec(unsigned int nsrce, const float ftime)
    _nsrce(nsrce),
    _ftime(ftime)
 {
+    resetState();
+    
     if (connect(kDefaultUDPPort))
     {
         juce::OSCReceiver::addListener(this, "/source/line");
@@ -31,6 +34,22 @@ OscCodec::OscCodec(unsigned int nsrce, const float ftime)
     }
 }
 
+void OscCodec::resetState()
+{
+    OSC_state* S = _oscstate;
+
+    for (int i = 0; i < NSRCE; i++)
+    {
+        S->_count = 0;
+        S->_flags = 0;
+        S->_x = S->_y = S->_z = 0.0f;
+        S->_g = -200.0f;
+        S->_dline = new float [MAXDEL + 1];
+        memset (S->_dline, 0, (MAXDEL + 1) * sizeof (float));
+        S++;
+    }
+}
+
 void OscCodec::setFtime(const double sampleRate, int const samplesPerBlock)
 {
     _ftime = (float)samplesPerBlock/(float)sampleRate;
@@ -41,6 +60,7 @@ void OscCodec::getparams (OSC_state* processorState)
     unsigned int  i, k, n;
     OSC_param     *P;
     OSC_state     *S;
+    bool staticSource = true;
 
     while (_oscqueue.rd_avail())
     {
@@ -49,48 +69,66 @@ void OscCodec::getparams (OSC_state* processorState)
         
         if (k)
         {
-            //S = _oscstate + (k - 1);
-            S = processorState + (k - 1);
-            n = ceilf (P->_t / _ftime);
-            S->_dx = (P->_x - S->_x) / n;
-            S->_dy = (P->_y - S->_y) / n;
-            S->_dz = (P->_z - S->_z) / n;
-            S->_dg = (P->_g - S->_g) / n;
-            S->_count = n;
+            S = _oscstate + (k - 1);
+            
+            if (P->_t > 0)
+            {
+                //S = processorState + (k - 1);
+                n = ceilf (P->_t / _ftime);
+                S->_dx = (P->_x - S->_x) / n;
+                S->_dy = (P->_y - S->_y) / n;
+                S->_dz = (P->_z - S->_z) / n;
+                S->_dg = (P->_g - S->_g) / n;
+                S->_count = n;
+                
+                staticSource = false;
+            }
+            else
+            {
+                S->_x = P->_x;
+                S->_y = P->_y;
+                S->_z = P->_z;
+                S->_g = P->_g;
+            }
         }
         else
         {
             for (i = 0; i < NSRCE; i++)
             {
-                //_oscstate [i]._g = -200.0f;
-                processorState [i]._g = -200.0f;
+                _oscstate [i]._g = -200.0f;
             }
         }
         _oscqueue.rd_commit ();
     }
-    S = processorState; //_oscstate;
     
-    for (i = 0; i < _nsrce; i++)
+    if (! staticSource)
     {
-        if (S->_count)
+        S = _oscstate;
+        
+        for (i = 0; i < _nsrce; i++)
         {
-            S->_x += S->_dx;
-            S->_y += S->_dy;
-            S->_z += S->_dz;
-            S->_g += S->_dg;
-            S->_count--;
+            if (S->_count)
+            {
+                S->_x += S->_dx;
+                S->_y += S->_dy;
+                S->_z += S->_dz;
+                S->_g += S->_dg;
+                S->_count--;
+            }
+            if (S->_g < -150.0f)
+            {
+                S->_x = S->_y = S->_z = 0;
+                S->_flags = 0;
+            }
+            else
+            {
+                S->_flags = 1;
+            }
+            S++;
         }
-        if (S->_g < -150.0f)
-        {
-            S->_x = S->_y = S->_z = 0;
-            S->_flags = 0;
-        }
-        else
-        {
-            S->_flags = 1;
-        }
-        S++;
     }
+    
+    memcpy(processorState, _oscstate, NSRCE * sizeof(OSC_state));
 }
 
 void OscCodec::oscMessageReceived (const juce::OSCMessage& message)

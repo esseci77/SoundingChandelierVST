@@ -26,6 +26,8 @@ class ParameterPanel : public juce::Component
                      const double min, const double max, const double step);
         void resized() override;
         
+        void enable(const bool onOff);
+        
       private:
         std::unique_ptr<juce::Label> m_label;
         std::unique_ptr<juce::Slider> m_slider;
@@ -39,6 +41,8 @@ class ParameterPanel : public juce::Component
         SourcePanel(const int sourceIndex,
                     SourceParameters& parameters);
         void resized() override;
+        
+        void enable(const bool onOff);
         
       private:
         std::unique_ptr<juce::Label>  m_sectionLabel;
@@ -55,6 +59,7 @@ class ParameterPanel : public juce::Component
         SourcesPanel(SoundingChandelierParameters& params);
         void resized() override;
         
+        void enable(const bool onOff);
       private:
         juce::OwnedArray<SourcePanel> m_panels;
     };
@@ -62,6 +67,8 @@ class ParameterPanel : public juce::Component
     
   public:
     ParameterPanel(SoundingChandelierParameters& params);
+    
+    void enable(const bool onOff);
     
   private:
     void resized() override;

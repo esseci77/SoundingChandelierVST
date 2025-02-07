@@ -12,18 +12,6 @@
 #include "impdata.h"
 #include "osx_utils.h"
 
-static char config52 [64] =
-{
-    0, 0, 1, 0, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1,
-    0, 0, 1, 0, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1,
-    0, 0, 1, 0, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1,
-    0, 0, 1, 0, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1,
-};
-
 //==============================================================================
 SoundingChandelierAudioProcessor::SoundingChandelierAudioProcessor()
 : juce::AudioProcessor(juce::AudioProcessor::BusesProperties()
@@ -34,7 +22,6 @@ SoundingChandelierAudioProcessor::SoundingChandelierAudioProcessor()
     _fsamp (0),
     _fsize (0),
     _nsrce (NSRCE), //nsrce), this can be a plugin parameter
-    //_oscqueue (64),
     _mgain (0),
     _parameters(*this)
 {
@@ -43,7 +30,7 @@ SoundingChandelierAudioProcessor::SoundingChandelierAudioProcessor()
     // Disable output channels used for the AMB system.
     for (int i = 0; i < 64; i++)
     {
-        _array.set_active (i, config52 [i]);
+        _array.set_active (i, _parameters.isSpeakerActive(i));
     }
 
     char ifp [512];
@@ -334,7 +321,7 @@ void SoundingChandelierAudioProcessor::processBlock (juce::AudioBuffer<float>& b
                                         : std::powf (10.0f, 0.05 * g));
         S++;
     }
-
+    
     r = 2.0f * _fsamp / 340.0f;
     Q = _outparam;
     
@@ -408,11 +395,22 @@ void SoundingChandelierAudioProcessor::processBlock (juce::AudioBuffer<float>& b
 
     _outconv.process ();
     
+#ifndef NO_INVERSION
+    const auto igain = _parameters.inversionGains();
+#endif
+    
     for (i = 0; i < NSPKR; i++)
     {
         if (_outp [i])
         {
+#ifdef NO_INVERSION
             memcpy (_outp [i], _outconv.outdata (i), nframes * sizeof (float));
+#else
+            for (j = 0; j < nframes; ++j)
+            {
+                _outp[i][j] = igain[i] * _outconv.outdata(i)[j];
+            }
+#endif
         }
     }
     
@@ -473,12 +471,30 @@ void SoundingChandelierAudioProcessor::startOSC()
     {
         _oscCodec = std::make_unique<OscCodec>(_nsrce, _ftime);
         jassert(_oscCodec);
+        
+        auto editor = (SoundingChandelierAudioProcessorEditor*)getActiveEditor();
+        editor->enable(false);
     }
 }
 
 void SoundingChandelierAudioProcessor::stopOSC()
 {
     _oscCodec = nullptr;
+    
+    auto editor = (SoundingChandelierAudioProcessorEditor*)getActiveEditor();
+    editor->enable(true);
+}
+
+void SoundingChandelierAudioProcessor::resetSourceParameters()
+{
+    if (_oscCodec)
+    {
+        _oscCodec->resetState();
+    }
+    else
+    {
+        parameters().resetAudioParameters();
+    }
 }
 
 // --- Original lampa methods --------------------------------------------------

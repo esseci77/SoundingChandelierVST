@@ -19,13 +19,25 @@ SoundingChandelierAudioProcessorEditor::SoundingChandelierAudioProcessorEditor (
     _parameterPanel = std::make_unique<ParameterPanel>(p.parameters());
     addAndMakeVisible(_parameterPanel.get());
     
-    juce::String text("OSC port: ");
-    text << kDefaultUDPPort;
-    _portLabel = std::make_unique<juce::Label>("portLabel", text);
+    _portLabel = std::make_unique<juce::Label>("portLabel", "OSC port:");
     addAndMakeVisible(_portLabel.get());
+    
+    _portEditor = std::make_unique<juce::TextEditor>("portEditor");
+    _portEditor->setJustification(juce::Justification(juce::Justification::Flags::right));
+    _portEditor->setInputFilter(new juce::TextEditor::LengthAndCharacterRestriction(6, "0123456789"), true);
+    _portEditor->setText(juce::String(p.parameters().oscPort()));
+    addAndMakeVisible(_portEditor.get());
     
     _toggleOsc = std::make_unique<juce::ToggleButton>("OSC connect");
     addAndMakeVisible(_toggleOsc.get());
+    
+    _resetBtn = std::make_unique<juce::TextButton>("Reset sources");
+    addAndMakeVisible(_resetBtn.get());
+    
+    _saveBtn = std::make_unique<juce::TextButton>("Save");
+    addAndMakeVisible(_saveBtn.get());
+    
+    _portEditor->setEnabled(false); // TODO: enable and get data from params.
     
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
@@ -43,6 +55,18 @@ SoundingChandelierAudioProcessorEditor::SoundingChandelierAudioProcessorEditor (
         {
             scp.stopOSC();
         }
+    };
+    
+    _resetBtn->onClick = [this]()
+    {
+        auto& scp = dynamic_cast<SoundingChandelierAudioProcessor&>(audioProcessor);
+        scp.resetSourceParameters();
+    };
+    
+    _saveBtn->onClick = [this]()
+    {
+        auto& scp = dynamic_cast<SoundingChandelierAudioProcessor&>(audioProcessor);
+        scp.parameters().save();
     };
 }
 
@@ -68,11 +92,22 @@ void SoundingChandelierAudioProcessorEditor::resized()
     auto area = getLocalBounds();
     auto strip = area.removeFromBottom(40);
     
-    _toggleOsc->setBounds(strip.removeFromLeft(120));
-    _portLabel->setBounds(strip.removeFromRight(120));
+    _toggleOsc->setBounds(strip.removeFromLeft(120).reduced(3));
+    _portEditor->setBounds(strip.removeFromRight(60).reduced(3));
+    _portLabel->setBounds(strip.removeFromRight(60).reduced(3));
     
     _scope->setBounds(area.removeFromLeft(area.getWidth()/2));
+    strip = area.removeFromBottom(40);
+    _saveBtn->setBounds(strip.removeFromRight(80).reduced(4));
+    _resetBtn->setBounds(strip.removeFromLeft(100).reduced(4));
+    
     _parameterPanel->setBounds(area);
+}
+
+void SoundingChandelierAudioProcessorEditor::enable(const bool onOff)
+{
+    _parameterPanel->enable(onOff);
+    _saveBtn->setEnabled(onOff);
 }
 
 void SoundingChandelierAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster* cb)

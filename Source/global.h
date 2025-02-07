@@ -46,6 +46,8 @@
 #define kGainMin         -120.0
 #define kGainMax            0.0
 
+enum { MAXDEL = 8192, DLMASK = MAXDEL - 1, REFDEL = MAXDEL - 2048 };
+
 class OSC_state
 {
 public:

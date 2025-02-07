@@ -27,6 +27,7 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
+    void enable(const bool onOff);    
     void changeListenerCallback(juce::ChangeBroadcaster* cb) override;
     
 private:
@@ -37,7 +38,10 @@ private:
     std::unique_ptr<Scope>              _scope;
     std::unique_ptr<ParameterPanel>     _parameterPanel;
     std::unique_ptr<juce::Label>        _portLabel;
+    std::unique_ptr<juce::TextEditor>   _portEditor;
     std::unique_ptr<juce::ToggleButton> _toggleOsc;
+    std::unique_ptr<juce::TextButton>   _resetBtn;
+    std::unique_ptr<juce::TextButton>   _saveBtn;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SoundingChandelierAudioProcessorEditor)
 };
