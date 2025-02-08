@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<JUCERPROJECT id="bUF5mv" name="OscTest" projectType="guiapp" useAppConfig="0"
+              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1">
+  <MAINGROUP id="HnKABn" name="OscTest">
+    <GROUP id="{41FACBB4-09AB-2543-E9FB-AEB4CF8E1E07}" name="Source">
+      <FILE id="mdhOEd" name="Scope.cpp" compile="1" resource="0" file="Source/Scope.cpp"/>
+      <FILE id="nx7dlU" name="Scope.h" compile="0" resource="0" file="Source/Scope.h"/>
+      <FILE id="PgMwjS" name="SourceControl.cpp" compile="1" resource="0"
+            file="Source/SourceControl.cpp"/>
+      <FILE id="vNsx3j" name="SourceControl.h" compile="0" resource="0" file="Source/SourceControl.h"/>
+      <FILE id="fwSVq2" name="OscEncoder.cpp" compile="1" resource="0" file="Source/OscEncoder.cpp"/>
+      <FILE id="q2eNup" name="OscEncoder.h" compile="0" resource="0" file="Source/OscEncoder.h"/>
+      <FILE id="N1dh5W" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
+      <FILE id="O0rfQT" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
+      <FILE id="DKvH85" name="MainComponent.cpp" compile="1" resource="0"
+            file="Source/MainComponent.cpp"/>
+    </GROUP>
+  </MAINGROUP>
+  <MODULES>
+    <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_osc" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+  </MODULES>
+  <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1"/>
+  <EXPORTFORMATS>
+    <XCODE_MAC targetFolder="Builds/MacOSX">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="OscTest" headerPath="../../Source&#10;../../../Source"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="OscTest" headerPath="../../Source&#10;../../../Source"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_audio_basics" path="../../SDKs/JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="../../SDKs/JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../../SDKs/JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../../SDKs/JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../../SDKs/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../../SDKs/JUCE/modules"/>
+        <MODULEPATH id="juce_osc" path="../../SDKs/JUCE/modules"/>
+      </MODULEPATHS>
+    </XCODE_MAC>
+  </EXPORTFORMATS>
+</JUCERPROJECT>
