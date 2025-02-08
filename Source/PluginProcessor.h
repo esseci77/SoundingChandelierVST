@@ -113,6 +113,7 @@ public:
     enum { NONE = -1, INIT = 0, IDLE = 1, PROC = 2 };
     
 private:
+    void findFilterPath(const char* name, char* path, const size_t maxlen);
     
     int             _jprio;
     int             _state;
@@ -132,6 +133,9 @@ private:
     Convproc        _inpconv;
     Convproc        _outconv;
     
+    char            _ifp [512];
+    char            _ofp [512];
+
     std::unique_ptr<OscCodec>    _oscCodec;
     SoundingChandelierParameters _parameters;
     

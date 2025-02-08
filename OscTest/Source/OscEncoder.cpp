@@ -19,6 +19,8 @@ OscEncoder::OscEncoder(DataSource* ds)
     auto host = m_dataSource->getTargetAddress();
     auto port = m_dataSource->getTargetPortNumber();
     
+    DBG("Connecting to '" + host + "' port " + juce::String(port));
+    
     if (! connect(host, port))
     {
         throw(Exception("Connection error."));
@@ -39,10 +41,10 @@ static inline void unwrapAngle(float& angle)
 
 void OscEncoder::timerCallback()
 {
-    float x, y, z, g, r, a;
-    auto index = m_dataSource->getOSCParam(x, y, z, g, r, a);
+    float x, y, z, g, r, aspeed;
+    auto index = m_dataSource->getOSCParam(x, y, z, g, r, aspeed);
     
-    if (a == 0)
+    if (std::fabs(aspeed) < 0.01)
     {
         m_param._index = (int32_t)index;
         m_param._flags = 0;
@@ -54,16 +56,16 @@ void OscEncoder::timerCallback()
     }
     else
     {
-        m_angularPosition += m_period * a;
+        m_angularPosition += m_period * aspeed;
         unwrapAngle(m_angularPosition);
         
         m_param._index = (int32_t)index;
-        m_param._flags = 0;
+        m_param._flags = 1;
         m_param._x = x + r * std::cos(m_angularPosition);
         m_param._y = y + r * std::sin(m_angularPosition);
         m_param._z = z;
         m_param._g = g;
-        m_param._t += m_period;
+        m_param._t = m_period;
     }
     juce::OSCMessage msg(juce::OSCAddressPattern("/source/line"));
     

@@ -96,12 +96,25 @@ void SoundingChandelierParameters::resetAudioParameters()
 
 int SoundingChandelierParameters::oscPort() const
 {
-    return m_oscPort;
+    const auto opn = m_valueTreeState.state.getProperty(propertyOscPortNumberId, juce::var(kDefaultUDPPort));
+    return (int)opn;
 }
 
 void SoundingChandelierParameters::setOscPort(const int port)
 {
-    m_oscPort = port;
+    m_valueTreeState.state.setProperty(propertyOscPortNumberId, juce::var(port), nullptr);
+}
+
+int SoundingChandelierParameters::refreshRatio()
+{
+    const auto prr = m_valueTreeState.state.getProperty(propertyParameterRefreshRatioId, juce::var(4));
+    return (int)prr;
+
+}
+
+void SoundingChandelierParameters::setRefreshRatio(const int ratio)
+{
+    m_valueTreeState.state.setProperty(propertyParameterRefreshRatioId, juce::var(ratio), nullptr);
 }
 
 juce::Value SoundingChandelierParameters::getAsValue(const juce::Identifier &name,
@@ -144,7 +157,19 @@ void SoundingChandelierParameters::copyFrom(const OSC_state* stateArray)
 
 juce::File SoundingChandelierParameters::defaultPath()
 {
-    return juce::File();
+    juce::String dir = juce::File::getSpecialLocation (juce::File:: userApplicationDataDirectory).getFullPathName(); // ~/Library
+    dir << juce::File::getSeparatorChar() << "Application Support"
+        << juce::File::getSeparatorChar() << "cds"
+        << juce::File::getSeparatorChar() << "Lampa";
+    
+    juce::File fdir (dir);
+    
+    if (! fdir.isDirectory())
+    {
+        fdir.createDirectory();
+    }
+    dir << juce::File::getSeparatorChar() << "Lampa.settings";
+    return juce::File(dir);
 }
 
 bool SoundingChandelierParameters::save()
@@ -165,6 +190,10 @@ bool SoundingChandelierParameters::save(const juce::File& file)
 
 bool SoundingChandelierParameters::load(const juce::File& file)
 {
+    if (! file.existsAsFile())
+    {
+        return false;
+    }
     juce::XmlDocument doc(file);
     std::unique_ptr<juce::XmlElement> xml(doc.getDocumentElement());
     

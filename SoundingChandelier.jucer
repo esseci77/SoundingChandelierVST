@@ -33,6 +33,10 @@
             file="Source/SourceControl.cpp"/>
       <FILE id="nin6eZ" name="SourceControl.h" compile="0" resource="0" file="Source/SourceControl.h"/>
     </GROUP>
+    <GROUP id="{DB9DF289-C122-7800-CFC1-F36944271C6B}" name="Resources">
+      <FILE id="OnSZoz" name="inputfilt1.ald" compile="0" resource="1" file="Resources/inputfilt1.ald"/>
+      <FILE id="nor6n6" name="outputfilt2.ald" compile="0" resource="1" file="Resources/outputfilt2.ald"/>
+    </GROUP>
     <GROUP id="{789D93EE-7FF8-9889-177A-07B5E950B338}" name="ThirdyParty">
       <GROUP id="{5C312835-BDA6-F8F7-1BA7-AFC25F3BF485}" name="zita-convolver">
         <FILE id="cBtUa6" name="zita-convolver.cc" compile="1" resource="0"

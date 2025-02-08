@@ -68,7 +68,7 @@ MainComponent::MainComponent()
     m_sourceSelector->setSelectedItemIndex(0, juce::dontSendNotification);
     m_periodEditor->setText(juce::String(kDefaultPeriodMs));
     m_portEditor->setText(juce::String(kDefaultUDPPort));
-    m_hostEditor->setText(juce::String(kDefaultHostName));
+    m_hostEditor->setText(juce::String(kDefaultHostAddr));
     m_messageEditor->setText("Disconnected");
     
     m_connectBtn->onClick = [this]()
@@ -78,10 +78,12 @@ MainComponent::MainComponent()
             if (m_connectBtn->getToggleState())
             {
                 m_oscEncoder = std::make_unique<OscEncoder>(this);
+                m_messageEditor->setText("Connected!");
             }
             else
             {
                 m_oscEncoder = nullptr;
+                m_messageEditor->setText("Disconnected.");
             }
         }
         catch(OscEncoder::Exception& e)

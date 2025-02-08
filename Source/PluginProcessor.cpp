@@ -33,19 +33,13 @@ SoundingChandelierAudioProcessor::SoundingChandelierAudioProcessor()
         _array.set_active (i, _parameters.isSpeakerActive(i));
     }
 
-    char ifp [512];
-    char ofp [512];
-
-#ifdef __APPLE__
-    OSXUtils::findFilterPath("inputfilt1",  ifp, 511);
-    OSXUtils::findFilterPath("outputfilt2", ofp, 511);
+#if 1
+    findFilterPath("inputfilt1.ald",  _ifp, 511);
+    findFilterPath("outputfilt2.ald", _ofp, 511);
 #else
     strncpy(ifp, SHARED"/lampadario/inputfilt1.ald",  511);
     strncpy(ofp, SHARED"/lampadario/outputfilt2.ald", 511);
 #endif
-
-    load_inpfilt (ifp);
-    load_outfilt (ofp);
 }
 
 SoundingChandelierAudioProcessor::~SoundingChandelierAudioProcessor()
@@ -117,6 +111,8 @@ void SoundingChandelierAudioProcessor::changeProgramName (int index, const juce:
 //==============================================================================
 void SoundingChandelierAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+    _parameters.load();
+    
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
     _fsamp = (unsigned int)sampleRate;
@@ -124,11 +120,13 @@ void SoundingChandelierAudioProcessor::prepareToPlay (double sampleRate, int sam
     _ftime = (float)_fsize / (float)_fsamp;
     _wrind = 0;
 #if DEBUG
-    //_oscCodec->setFtime(sampleRate, samplesPerBlock);
     const auto ich  = getTotalNumInputChannels();
     const auto och = getTotalNumOutputChannels();
     DBG("Actually " + juce::String(ich) + " inputs, " + juce::String(och) + " outputs.");
 #endif
+    load_inpfilt (_ifp);
+    load_outfilt (_ofp);
+
     int i, j;
     OSC_state *S;
     OUT_param *Q;
@@ -160,8 +158,7 @@ void SoundingChandelierAudioProcessor::prepareToPlay (double sampleRate, int sam
     _outconv.set_options (Convproc::OPT_FFTW_MEASURE);
     _state = IDLE;
         
-    const int periodMs = (int)(1000.0 * _parameters.paramPeriod()
-                                        / sampleRate);
+    const int periodMs = _parameters.refreshRatio() * (int)(1000.0 * _ftime);
     startTimer(periodMs);
 }
 
@@ -460,9 +457,6 @@ void SoundingChandelierAudioProcessor::timerCallback()
     {
         _parameters.copyFrom(_oscstate);
     }
-    
-    //getChangeBroadcasterMessage().messageID = LampaChangeBroadcaster::Message::Type::kUpdateUI;
-    //sendChangeMessage();
 }
 
 void SoundingChandelierAudioProcessor::startOSC()
@@ -724,4 +718,30 @@ float SoundingChandelierAudioProcessor::rcos (float x, const float p) const
     if (x <= 0.0f) return 1.0f;
     if (x >= 1.0f) return 0.0f;
     return std::powf (0.5f * (1.0f + std::cosf (x * (float) M_PI)), p);
+}
+
+void SoundingChandelierAudioProcessor::findFilterPath(const char* name,
+                                                      char* path,
+                                                      const size_t maxlen)
+{
+    juce::String spath = juce::File::getSpecialLocation (juce::File::tempDirectory).getFullPathName();
+    spath << juce::File::getSeparatorChar();
+    spath << name;
+    
+    juce::File fpath(spath);
+    
+    if (! fpath.existsAsFile())
+    {
+        juce::FileOutputStream fos(fpath);
+        
+        if (strstr(name, "inputfilt1") != nullptr)
+        {
+            fos.write(BinaryData::inputfilt1_ald, BinaryData::inputfilt1_aldSize);
+        }
+        else if (strstr(name, "outputfilt2") != nullptr)
+        {
+            fos.write(BinaryData::outputfilt2_ald, BinaryData::outputfilt2_aldSize);
+        }
+    }
+    strncpy(path, fpath.getFullPathName().toRawUTF8(), maxlen);
 }

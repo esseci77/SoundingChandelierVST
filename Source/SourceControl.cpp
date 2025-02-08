@@ -127,7 +127,7 @@ void ParameterPanel::resized()
 
 void ParameterPanel::enable(const bool onOff)
 {
-    auto* sp = dynamic_cast<SourcePanel*>(m_viewport->getViewedComponent());
+    auto* sp = dynamic_cast<SourcesPanel*>(m_viewport->getViewedComponent());
     sp->enable(onOff);
 }
 

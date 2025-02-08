@@ -12,6 +12,11 @@
 #include <JuceHeader.h>
 #include "global.h"
 
+static juce::Identifier propertyOscPortNumberId         ("OscPortNumber");
+static juce::Identifier propertyParameterRefreshRatioId ("ParameterRefreshRatio");
+static juce::Identifier propertyActiveSpeakerMatrixId   ("ActiveSpeakerMatrix");
+static juce::Identifier propertySpeakerGainsMatrixId    ("SpeakerGainMatrix");
+
 struct SourceParameters
 {
     juce::AudioParameterFloat*   xpos  = nullptr; // x position
@@ -32,7 +37,7 @@ class SoundingChandelierParameters
     juce::AudioProcessorValueTreeState& valueTree() { return m_valueTreeState; }
 
     int numberOfSources() const { return m_nSources; }
-    int oscPort() const;
+    int  oscPort() const;
     void setOscPort(const int port);
 
     SourceParameters& operator[](const int idx) { return m_srcParams[idx]; }
@@ -44,18 +49,14 @@ class SoundingChandelierParameters
     /// Copy value from state array to parameter.
     void copyFrom(const OSC_state* stateArray);
 
-    /**
-     * @brief Update parameters
-     * @param dt Time interval in seconds
-     */
+    /// Update parameters
+    /// @param dt Time interval in seconds
     void update(const double dt);
         
-    void setParamPeriod(const float pp) { m_paramPeriod = (int)pp; }
-    int paramPeriod() const { return m_paramPeriod; }
-
-    void setParamOffset(const float po) { m_paramOffset = (int)po; }
-    int paramOffset() const { return m_paramOffset; }
-
+    /// Parameters will be refreshed the sampling period times the returned value.
+    int refreshRatio();
+    void setRefreshRatio(const int ratio);
+    
     juce::Value getAsValue(const juce::Identifier &name,
                            bool shouldUpdateSynchronously = true);
     
@@ -86,9 +87,6 @@ class SoundingChandelierParameters
     
     std::vector<SourceParameters> m_srcParams;
     int   m_nSources    = 0;
-    int   m_oscPort     = kDefaultUDPPort;
-    int   m_paramPeriod = 2048; // this can be modified only on startup!
-    int   m_paramOffset = 0;
     float m_maxdist     = 2.0;  // m
 
     char m_config52 [64] =
