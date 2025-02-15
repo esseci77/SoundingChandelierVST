@@ -27,12 +27,6 @@ SoundingChandelierAudioProcessor::SoundingChandelierAudioProcessor()
 {
     _jprio = sched_get_priority_min(SCHED_OTHER);
 
-    // Disable output channels used for the AMB system.
-    for (int i = 0; i < 64; i++)
-    {
-        _array.set_active (i, _parameters.isSpeakerActive(i));
-    }
-
 #if 1
     findFilterPath("inputfilt1.ald",  _ifp, 511);
     findFilterPath("outputfilt2.ald", _ofp, 511);
@@ -113,6 +107,12 @@ void SoundingChandelierAudioProcessor::prepareToPlay (double sampleRate, int sam
 {
     _parameters.load();
     
+    // Disable output channels used for the AMB system.
+    for (int i = 0; i < 64; i++)
+    {
+        _array.set_active (i, _parameters.isSpeakerActive(i));
+    }
+    
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
     _fsamp = (unsigned int)sampleRate;
@@ -156,8 +156,12 @@ void SoundingChandelierAudioProcessor::prepareToPlay (double sampleRate, int sam
     }
     _inpconv.set_options (Convproc::OPT_FFTW_MEASURE);
     _outconv.set_options (Convproc::OPT_FFTW_MEASURE);
-    _state = IDLE;
-        
+    
+    if (samplesPerBlock > 128)
+    {
+        _state = PROC;
+    }
+    
     const int periodMs = _parameters.refreshRatio() * (int)(1000.0 * _ftime);
     startTimer(periodMs);
 }
@@ -268,9 +272,9 @@ void SoundingChandelierAudioProcessor::processBlock (juce::AudioBuffer<float>& b
     const size_t nframes = buffer.getNumSamples();
 #endif
     
-    if (_oscCodec)
+    if (_OscDecoder)
     {
-        _oscCodec->getparams (_oscstate);
+        _OscDecoder->getparams (_oscstate);
     }
     else
     {
@@ -453,18 +457,32 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 
 void SoundingChandelierAudioProcessor::timerCallback()
 {
-    if (_oscCodec)
+    if (_OscDecoder)
     {
         _parameters.copyFrom(_oscstate);
+    }
+    
+    auto ed = (SoundingChandelierAudioProcessorEditor*)getActiveEditor();
+    
+    if (ed)
+    {
+        if (_state != PROC)
+        {
+            ed->showMessage({ "Not processing audio. Check connections or audio buffer size (must be > 128).", 1});
+        }
+        else
+        {
+            ed->showMessage({ "Processing", 0 });
+        }
     }
 }
 
 void SoundingChandelierAudioProcessor::startOSC()
 {
-    if (!_oscCodec)
+    if (!_OscDecoder)
     {
-        _oscCodec = std::make_unique<OscCodec>(_nsrce, _ftime);
-        jassert(_oscCodec);
+        _OscDecoder = std::make_unique<OscDecoder>(_nsrce, _ftime);
+        jassert(_OscDecoder);
         
         auto editor = (SoundingChandelierAudioProcessorEditor*)getActiveEditor();
         editor->enable(false);
@@ -473,7 +491,7 @@ void SoundingChandelierAudioProcessor::startOSC()
 
 void SoundingChandelierAudioProcessor::stopOSC()
 {
-    _oscCodec = nullptr;
+    _OscDecoder = nullptr;
     
     auto editor = (SoundingChandelierAudioProcessorEditor*)getActiveEditor();
     editor->enable(true);
@@ -481,9 +499,9 @@ void SoundingChandelierAudioProcessor::stopOSC()
 
 void SoundingChandelierAudioProcessor::resetSourceParameters()
 {
-    if (_oscCodec)
+    if (_OscDecoder)
     {
-        _oscCodec->resetState();
+        _OscDecoder->resetState();
     }
     else
     {

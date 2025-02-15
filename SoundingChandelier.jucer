@@ -14,8 +14,8 @@
       <FILE id="YA7U5d" name="spkarray.cc" compile="1" resource="0" file="Source/spkarray.cc"/>
       <FILE id="t1kbEN" name="spkarray.h" compile="0" resource="0" file="Source/spkarray.h"/>
       <FILE id="NV9wSn" name="global.h" compile="0" resource="0" file="Source/global.h"/>
-      <FILE id="ijxgNF" name="OscCodec.cpp" compile="1" resource="0" file="Source/OscCodec.cpp"/>
-      <FILE id="uUFTi5" name="OscCodec.h" compile="0" resource="0" file="Source/OscCodec.h"/>
+      <FILE id="ijxgNF" name="OscDecoder.cpp" compile="1" resource="0" file="Source/OscDecoder.cpp"/>
+      <FILE id="uUFTi5" name="OscDecoder.h" compile="0" resource="0" file="Source/OscDecoder.h"/>
       <FILE id="l3Blzk" name="PluginParameters.cpp" compile="1" resource="0"
             file="Source/PluginParameters.cpp"/>
       <FILE id="pxFoFy" name="PluginParameters.h" compile="0" resource="0"

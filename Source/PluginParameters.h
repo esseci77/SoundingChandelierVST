@@ -83,35 +83,19 @@ class SoundingChandelierParameters
     bool load(const juce::File& file);
     
    private:
+    /// fill active flags and gain matrices.
+    void fillMatrices();
+    
      juce::AudioProcessorValueTreeState m_valueTreeState;
     
     std::vector<SourceParameters> m_srcParams;
     int   m_nSources    = 0;
     float m_maxdist     = 2.0;  // m
 
-    char m_config52 [64] =
-    {
-        0, 0, 1, 0, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        0, 0, 1, 0, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        0, 0, 1, 0, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        0, 0, 1, 0, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1
-    };
+    /// This vector holds the active flag matrix.
+    char m_config52 [64];
     
     /// Some speakers has inverted cables, so proper gain must be provided!
-    float m_inversionGains [64] =
-    {
-        1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f, //  0 -  7
-       -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, //  8 - 15
-        1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f, // 16 - 23
-        1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f, // 24 - 31
-        1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f, // 32 - 39
-        1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f, // 40 - 47
-        1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f, // 48 - 55
-        1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f, // 56 - 63
-    };
+    float m_inversionGains [64];
 
 };

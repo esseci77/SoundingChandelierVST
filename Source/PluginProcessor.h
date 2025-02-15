@@ -14,7 +14,7 @@
 #include "spkarray.h"
 #include "global.h"
 
-#include "OscCodec.h"
+#include "OscDecoder.h"
 #include "PluginParameters.h"
 
 class LampaChangeBroadcaster : public juce::ChangeBroadcaster
@@ -49,6 +49,7 @@ class OUT_param
 };
 
 //==============================================================================
+
 /**
 */
 class SoundingChandelierAudioProcessor  : public juce::AudioProcessor,
@@ -56,6 +57,18 @@ class SoundingChandelierAudioProcessor  : public juce::AudioProcessor,
                                           public LampaChangeBroadcaster
 {
 public:
+    struct Error
+    {
+        enum Code
+        {
+            None,
+            NotProcessing
+        };
+        
+        juce::String message;
+        int code;
+    };
+
     //==============================================================================
     SoundingChandelierAudioProcessor();
     ~SoundingChandelierAudioProcessor() override;
@@ -110,7 +123,10 @@ public:
     float rcos (float x, float p) const;
 
     // Rendering engine state
-    enum { NONE = -1, INIT = 0, IDLE = 1, PROC = 2 };
+    enum { NONE = -1,
+           INIT = 0,
+           IDLE = 1,
+           PROC = 2 };
     
 private:
     void findFilterPath(const char* name, char* path, const size_t maxlen);
@@ -136,7 +152,7 @@ private:
     char            _ifp [512];
     char            _ofp [512];
 
-    std::unique_ptr<OscCodec>    _oscCodec;
+    std::unique_ptr<OscDecoder>    _OscDecoder;
     SoundingChandelierParameters _parameters;
     
     //==============================================================================

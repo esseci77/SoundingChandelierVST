@@ -11,6 +11,27 @@
 #include "PluginParameters.h"
 #include "global.h"
 
+static const juce::Array<juce::var> s_activeSpkMatrix =
+{ 0, 0, 1, 0, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,
+  0, 0, 1, 0, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,
+  0, 0, 1, 0, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,
+  0, 0, 1, 0, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1 };
+
+static const juce::Array<juce::var> s_gainSpkMatrix =
+{
+    1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f, //  0 -  7
+   -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, //  8 - 15
+    1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f, // 16 - 23
+    1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f, // 24 - 31
+    1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f, // 32 - 39
+    1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f, // 40 - 47
+    1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f, // 48 - 55
+    1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f, // 56 - 63
+};
 // ---------------------------------------------------------------[ esseci ]----
 
 static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout(juce::AudioProcessor* p)
@@ -81,6 +102,14 @@ SoundingChandelierParameters::SoundingChandelierParameters(juce::AudioProcessor&
         paramId << i;
         m_srcParams[i].gain  = (juce::AudioParameterFloat*)m_valueTreeState.getParameter(paramId);
     }
+    
+    
+    m_valueTreeState.state.setProperty(propertyOscPortNumberId,         juce::var(kDefaultUDPPort), nullptr)
+                          .setProperty(propertyParameterRefreshRatioId, juce::var(4), nullptr)
+                          .setProperty(propertyActiveSpeakerMatrixId,   juce::var(s_activeSpkMatrix), nullptr)
+                          .setProperty(propertySpeakerGainsMatrixId,    juce::var(s_gainSpkMatrix), nullptr);
+    
+    fillMatrices();
 }
 
 void SoundingChandelierParameters::resetAudioParameters()
@@ -109,7 +138,6 @@ int SoundingChandelierParameters::refreshRatio()
 {
     const auto prr = m_valueTreeState.state.getProperty(propertyParameterRefreshRatioId, juce::var(4));
     return (int)prr;
-
 }
 
 void SoundingChandelierParameters::setRefreshRatio(const int ratio)
@@ -202,5 +230,27 @@ bool SoundingChandelierParameters::load(const juce::File& file)
         return false;
     }
     m_valueTreeState.replaceState(juce::ValueTree::fromXml(*xml));
+    fillMatrices();
+    
     return true;
+}
+
+void SoundingChandelierParameters::fillMatrices()
+{
+    juce::var value = m_valueTreeState.state.getProperty(propertyActiveSpeakerMatrixId, juce::var(s_activeSpkMatrix));
+    auto aspm = value.getArray();
+    
+    for (int i = 0; i < NSPKR; ++i)
+    {
+        const auto flag = (int)(*aspm)[i];
+        m_config52[i] = (char)flag;
+    }
+    
+    value = m_valueTreeState.state.getProperty(propertySpeakerGainsMatrixId, juce::var(s_gainSpkMatrix));
+    auto spgm = value.getArray();
+    
+    for (int i = 0; i < NSPKR; ++i)
+    {
+        m_inversionGains[i] = (float)(*spgm)[i];
+    }
 }

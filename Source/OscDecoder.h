@@ -1,7 +1,7 @@
 /*
   ==============================================================================
 
-    OscCodec.h
+    OscDecoder.h
     Created: 1 Feb 2025 3:53:01pm
     Author:  Simone Campanini
 
@@ -13,11 +13,11 @@
 
 #include "global.h"
 
-class OscCodec : public juce::OSCReceiver,
+class OscDecoder : public juce::OSCReceiver,
                  private juce::OSCReceiver::ListenerWithOSCAddress<juce::OSCReceiver::MessageLoopCallback>
 {
   public:
-    OscCodec(unsigned int nsrce, const float ftime);
+    OscDecoder(unsigned int nsrce, const float ftime);
 
     /// Reset backup state.
     void resetState();

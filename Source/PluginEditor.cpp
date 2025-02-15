@@ -31,6 +31,9 @@ SoundingChandelierAudioProcessorEditor::SoundingChandelierAudioProcessorEditor (
     _toggleOsc = std::make_unique<juce::ToggleButton>("OSC connect");
     addAndMakeVisible(_toggleOsc.get());
     
+    _messageLabel = std::make_unique<juce::Label>("messageLabel", "Running.");
+    addAndMakeVisible(_messageLabel.get());
+
     _resetBtn = std::make_unique<juce::TextButton>("Reset sources");
     addAndMakeVisible(_resetBtn.get());
     
@@ -95,6 +98,7 @@ void SoundingChandelierAudioProcessorEditor::resized()
     _toggleOsc->setBounds(strip.removeFromLeft(120).reduced(3));
     _portEditor->setBounds(strip.removeFromRight(60).reduced(3));
     _portLabel->setBounds(strip.removeFromRight(60).reduced(3));
+    _messageLabel->setBounds(strip.reduced(3));
     
     _scope->setBounds(area.removeFromLeft(area.getWidth()/2));
     strip = area.removeFromBottom(40);
@@ -106,8 +110,22 @@ void SoundingChandelierAudioProcessorEditor::resized()
 
 void SoundingChandelierAudioProcessorEditor::enable(const bool onOff)
 {
-    _parameterPanel->enable(onOff);
-    _saveBtn->setEnabled(onOff);
+    const bool status = _parameterPanel->isEnabled();
+    
+    if (status != onOff)
+    {
+        _parameterPanel->enable(onOff);
+        _saveBtn->setEnabled(onOff);
+    }
+}
+
+void SoundingChandelierAudioProcessorEditor::showMessage(const SoundingChandelierAudioProcessor::Error& error)
+{
+    if (error.code != errorCode)
+    {
+        errorCode = error.code;
+        _messageLabel->setText(error.message, juce::sendNotification);
+    }
 }
 
 void SoundingChandelierAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster* cb)

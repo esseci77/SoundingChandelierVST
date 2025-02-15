@@ -1,19 +1,19 @@
 /*
   ==============================================================================
 
-    OscCodec.cpp
+    OscDecoder.cpp
     Created: 1 Feb 2025 3:53:01pm
     Author:  Simone Campanini
 
   ==============================================================================
 */
 
-#include "OscCodec.h"
+#include "OscDecoder.h"
 #include "global.h"
 
 //TODO: OSC should write data to plugin parameters!!
 
-OscCodec::OscCodec(unsigned int nsrce, const float ftime)
+OscDecoder::OscDecoder(unsigned int nsrce, const float ftime)
  : juce::OSCReceiver("LampaOscThread"),
    _oscqueue (64),
    _nsrce(nsrce),
@@ -34,7 +34,7 @@ OscCodec::OscCodec(unsigned int nsrce, const float ftime)
     }
 }
 
-void OscCodec::resetState()
+void OscDecoder::resetState()
 {
     OSC_state* S = _oscstate;
 
@@ -50,12 +50,12 @@ void OscCodec::resetState()
     }
 }
 
-void OscCodec::setFtime(const double sampleRate, int const samplesPerBlock)
+void OscDecoder::setFtime(const double sampleRate, int const samplesPerBlock)
 {
     _ftime = (float)samplesPerBlock/(float)sampleRate;
 }
 
-void OscCodec::getparams (OSC_state* processorState)
+void OscDecoder::getparams (OSC_state* processorState)
 {
     unsigned int  i, k, n;
     OSC_param     *P;
@@ -131,7 +131,7 @@ void OscCodec::getparams (OSC_state* processorState)
     memcpy(processorState, _oscstate, NSRCE * sizeof(OSC_state));
 }
 
-void OscCodec::oscMessageReceived (const juce::OSCMessage& message)
+void OscDecoder::oscMessageReceived (const juce::OSCMessage& message)
 {
     OSC_param* P;
     auto addr = message.getAddressPattern();
